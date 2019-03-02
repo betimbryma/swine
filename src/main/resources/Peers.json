@@ -1,0 +1,20 @@
+[
+  {
+    "name": "peerOrch",
+    "channelType": "Email",
+    "channel": "peerOrch@localhost",
+    "role": "HumanExpert"
+  },
+  {
+    "name": "peer1",
+    "channelType": "Email",
+    "channel": "peer1@localhost",
+    "role": "HumanExpert"
+  },
+  {
+    "name": "peer2",
+    "channelType": "Email",
+    "channel": "peer2@localhost",
+    "role": "HumanExpert"
+  }
+]
