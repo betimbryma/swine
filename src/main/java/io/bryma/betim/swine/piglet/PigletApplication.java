@@ -43,6 +43,7 @@ public class PigletApplication extends Application {
 
     @Override
     public TaskRunner createTaskRunner(TaskRequest request) {
-        return new PigletTaskRunner();
+
+        return null;//new PigletRunner(null, null); //TODO
     }
 }

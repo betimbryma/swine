@@ -13,7 +13,7 @@ public class PigletTaskRequest extends TaskRequest {
 
     @Override
     public String getRequest() {
-        return null;
+        return getDefinition().toString();
     }
 
     @Override

@@ -16,5 +16,18 @@
     "channelType": "Email",
     "channel": "peer2@localhost",
     "role": "HumanExpert"
+  },
+  {
+    "name": "peer2",
+    "channelType": "Email",
+    "channel": "peer2@localhost",
+    "role": "HumanExpert"
+  },
+  {
+    "name": "peer2",
+    "channelType": "Email",
+    "channel": "peer2@localhost",
+    "role": "HumanExpert"
   }
+
 ]

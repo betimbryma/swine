@@ -6,15 +6,11 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 @SpringBootApplication
-public class SwineApplication extends SpringBootServletInitializer {
+public class SwineApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(SwineApplication.class, args);
     }
 
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
-        return builder.sources(SwineApplication.class);
-    }
 }
 
