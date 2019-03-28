@@ -1,8 +1,6 @@
 package io.bryma.betim.swine.piglet;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
+import akka.actor.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.peermanager.query.PeerQuery;
@@ -17,20 +15,29 @@ import io.bryma.betim.swine.handlers.PigletProvisioning;
 import io.bryma.betim.swine.services.ExecutionService;
 import io.bryma.betim.swine.services.NegotiationService;
 
-public class PigletTaskRunner extends AbstractActor implements TaskRunner {
+import java.time.Duration;
+
+public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRunner {
 
     private final PigletTaskRequest pigletTaskRequest;
     private final SmartSocietyApplicationContext smartSocietyApplicationContext;
-    private final String peerQuery;
-    private NegotiationService negotiationService;
-    private ExecutionService executionService;
-    private String url;
+    private final PeerQuery peerQuery;
+    private final NegotiationService negotiationService;
+    private final ExecutionService executionService;
+    private final String url;
     private ActorRef parent;
+    private final String START_TICK = "START_TICK";
+    private final String END_TICK = "END_TICK";
+    private final String executionId;
+    private boolean openCall;
+
+    private static final class PigletTick{}
 
     public static Props props(PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext,
-                                    String peerQuery, NegotiationService negotiationService, ExecutionService executionService, String url){
+                              PeerQuery peerQuery, NegotiationService negotiationService, ExecutionService executionService, String url,
+                                    Duration start, Duration end, String executionId, boolean openCall){
         return Props.create(PigletTaskRunner.class, () -> new PigletTaskRunner(pigletTaskRequest, smartSocietyApplicationContext,
-                peerQuery, negotiationService, executionService, url));
+                peerQuery, negotiationService, executionService, url, start, end, executionId, openCall));
     }
 
     @Override
@@ -40,13 +47,18 @@ public class PigletTaskRunner extends AbstractActor implements TaskRunner {
     }
 
     private PigletTaskRunner(PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext,
-                            String peerQuery, NegotiationService negotiationService, ExecutionService executionService, String url) {
+                             PeerQuery peerQuery, NegotiationService negotiationService, ExecutionService executionService, String url,
+                             Duration start, Duration end, String executionId, boolean openCall) {
         this.pigletTaskRequest = pigletTaskRequest;
         this.smartSocietyApplicationContext = smartSocietyApplicationContext;
         this.peerQuery = peerQuery;
         this.negotiationService = negotiationService;
         this.url = url;
         this.executionService = executionService;
+        getTimers().startSingleTimer(START_TICK, new PigletTick(), start);
+        getTimers().startSingleTimer(END_TICK, PoisonPill.getInstance(), end);
+        this.executionId = executionId;
+        this.openCall = openCall;
     }
 
     private void start(){
@@ -54,30 +66,25 @@ public class PigletTaskRunner extends AbstractActor implements TaskRunner {
         try {
 
             Collective collective = ApplicationBasedCollective
-                    .createFromQuery(smartSocietyApplicationContext, PeerQuery.create()
-                        .withRule(QueryRule.create(peerQuery)
-                        .withValue(AttributeType.from("true"))
-                        .withOperation(QueryOperation.equals))
-                        );
+                    .createFromQuery(smartSocietyApplicationContext, peerQuery);
 
-            ActorRef provisioningActor = getContext().getSystem()
-                    .actorOf(PigletProvisioning.props(smartSocietyApplicationContext, pigletTaskRequest));
+            Props provisioningProps = PigletProvisioning.props(smartSocietyApplicationContext, pigletTaskRequest);
 
-            ActorRef compositionActor = getContext().getSystem()
-                    .actorOf(PigletComposition.props(smartSocietyApplicationContext, pigletTaskRequest, negotiationService
-                        ,url));
+            Props compositionProps = PigletComposition.props(smartSocietyApplicationContext, pigletTaskRequest,
+                    negotiationService, url);
 
-            ActorRef negotiationActor = getContext().getSystem()
-                    .actorOf(PigletNegotiation.props(smartSocietyApplicationContext, pigletTaskRequest, negotiationService, url));
+            Props negotiationProps = PigletNegotiation.props(smartSocietyApplicationContext,
+                    pigletTaskRequest, negotiationService, url);
 
-            ActorRef executionActor = getContext().getSystem()
-                    .actorOf(PigletExecution.props(smartSocietyApplicationContext));
+            Props executionProps = PigletExecution.props(smartSocietyApplicationContext,
+                    executionService, executionId, url);
 
             TaskFlowDefinition taskFlowDefinition
-                    = TaskFlowDefinition.onDemandWithOpenCall(
-                    provisioningActor, compositionActor, negotiationActor,
-                    executionActor
-            ).withCollectiveForProvisioning(collective);
+                    = this.openCall ? TaskFlowDefinition.onDemandWithOpenCall(
+                    provisioningProps, compositionProps, negotiationProps,
+                    executionProps
+            ).withCollectiveForProvisioning(collective) : TaskFlowDefinition.onDemandWithoutOpenCall(provisioningProps, negotiationProps,
+                                                                executionProps).withCollectiveForProvisioning(collective);
 
             ActorRef collectiveBasedTask = getContext().getSystem()
                     .actorOf(CollectiveBasedTask.props(smartSocietyApplicationContext, pigletTaskRequest,
@@ -102,11 +109,13 @@ public class PigletTaskRunner extends AbstractActor implements TaskRunner {
                             break;
                     }
                 })
+                .match(PigletTick.class,
+                        p -> start())
                 .build();
     }
 
     @Override
     public JsonNode getStateDescription() {
-        return null;
+        return this.pigletTaskRequest.getDefinition().getJson();
     }
 }

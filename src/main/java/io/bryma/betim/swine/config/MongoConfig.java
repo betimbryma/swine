@@ -8,10 +8,10 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.config.AbstractMongoConfiguration;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
-@Configuration
-@EnableMongoRepositories(basePackages = "io.bryma.betim.swine.repositories")
-public class MongoConfig extends AbstractMongoConfiguration {
-
+//@Configuration
+//@EnableMongoRepositories(basePackages = "io.bryma.betim.swine.repositories")
+public class MongoConfig {//extends AbstractMongoConfiguration {
+/*
     @Bean
     MongoTransactionManager transactionManager(MongoDbFactory dbFactory) {
         return new MongoTransactionManager(dbFactory);
@@ -24,7 +24,7 @@ public class MongoConfig extends AbstractMongoConfiguration {
 
     @Override
     public MongoClient mongoClient() {
-        return new MongoClient("127.0.0.1", 27017);
+        return new MongoClient("127.0.0.1", 6666);
     }
-
+*/
 }

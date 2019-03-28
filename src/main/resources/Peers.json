@@ -3,31 +3,119 @@
     "name": "peerOrch",
     "channelType": "Email",
     "channel": "peerOrch@localhost",
-    "role": "HumanExpert"
+    "role": "HumanExpert",
+    "location": "Vienna"
   },
   {
     "name": "peer1",
     "channelType": "Email",
     "channel": "peer1@localhost",
-    "role": "HumanExpert"
+    "role": "HumanExpert",
+    "location": "Vienna"
   },
   {
     "name": "peer2",
     "channelType": "Email",
     "channel": "peer2@localhost",
-    "role": "HumanExpert"
+    "role": "HumanExpert",
+    "location": "Vienna"
   },
   {
-    "name": "peer2",
+    "name": "peer3",
     "channelType": "Email",
-    "channel": "peer2@localhost",
-    "role": "HumanExpert"
+    "channel": "peer3@localhost",
+    "role": "HumanExpert",
+    "location": "Vienna"
   },
   {
-    "name": "peer2",
+    "name": "peer4",
     "channelType": "Email",
-    "channel": "peer2@localhost",
-    "role": "HumanExpert"
+    "channel": "peer4@localhost",
+    "role": "HumanExpert",
+    "location": "Vienna"
+  },
+  {
+    "name": "peer5",
+    "channelType": "Email",
+    "channel": "peer5@localhost",
+    "role": "HumanExpert",
+    "location": "Graz"
+  },
+  {
+    "name": "peer6",
+    "channelType": "Email",
+    "channel": "peer6@localhost",
+    "role": "HumanExpert",
+    "location": "Graz"
+  },
+  {
+    "name": "peer7",
+    "channelType": "Email",
+    "channel": "peer7@localhost",
+    "role": "HumanExpert",
+    "location": "Graz"
+  },
+  {
+    "name": "peer8",
+    "channelType": "Email",
+    "channel": "peer8@localhost",
+    "role": "HumanExpert",
+    "location": "Graz"
+  },
+  {
+    "name": "peer9",
+    "channelType": "Email",
+    "channel": "peer9@localhost",
+    "role": "HumanExpert",
+    "location": "Salzburg"
+  },
+  {
+    "name": "peer10",
+    "channelType": "Email",
+    "channel": "peer10@localhost",
+    "role": "HumanExpert",
+    "location": "Salzburg"
+  },
+  {
+    "name": "peer11",
+    "channelType": "Email",
+    "channel": "peer11@localhost",
+    "role": "HumanExpert",
+    "location": "Salzburg"
+  },
+  {
+    "name": "peer12",
+    "channelType": "Email",
+    "channel": "peer12@localhost",
+    "role": "HumanExpert",
+    "location": "Salzburg"
+  },
+  {
+    "name": "peer13",
+    "channelType": "Email",
+    "channel": "peer13@localhost",
+    "role": "HumanExpert",
+    "location": "Linz"
+  },
+  {
+    "name": "peer14",
+    "channelType": "Email",
+    "channel": "peer14@localhost",
+    "role": "HumanExpert",
+    "location": "Linz"
+  },
+  {
+    "name": "peer15",
+    "channelType": "Email",
+    "channel": "peer15@localhost",
+    "role": "HumanExpert",
+    "location": "Linz"
+  },
+  {
+    "name": "peer16",
+    "channelType": "Email",
+    "channel": "peer16@localhost",
+    "role": "HumanExpert",
+    "location": "Linz"
   }
-
 ]

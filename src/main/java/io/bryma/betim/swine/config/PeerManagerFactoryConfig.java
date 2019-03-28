@@ -12,7 +12,7 @@ public class PeerManagerFactoryConfig {
 
     @Bean
     public PeerManagerMongoProxy.Factory getPMFactory() throws IOException {
-        MongoRunner runner = MongoRunner.withPort(27017);
+        MongoRunner runner = MongoRunner.withPort(6666);
         return PeerManagerMongoProxy.factory(runner.getMongoDb());
     }
 

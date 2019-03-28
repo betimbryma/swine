@@ -3,12 +3,13 @@ package io.bryma.betim.swine.controllers;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import io.bryma.betim.swine.model.Peer;
 import io.bryma.betim.swine.model.Piglet;
 import io.bryma.betim.swine.services.ExecutionService;
 import io.bryma.betim.swine.services.PigletService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/piglet")
@@ -25,8 +26,17 @@ public class PigletController {
     }
 
     @PostMapping("/save")
-    public Piglet savePiglet(Piglet piglet){
-        ActorRef actorRef = actorSystem.actorOf(Props.create(Pigle))
+    public Piglet savePiglet(@RequestBody Piglet piglet){
+        Peer peer = new Peer();
+        peer.setId("betim");
+        piglet.setOwner(peer);
         return pigletService.savePiglet(piglet);
+    }
+
+    @GetMapping("/all")
+    public List<Piglet> getAll(){
+        Peer peer = new Peer();
+        peer.setId("betim");
+        return pigletService.getPiglets(peer);
     }
 }

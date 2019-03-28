@@ -1,9 +1,12 @@
 package io.bryma.betim.swine.services;
 
 import akka.actor.ActorSystem;
+import io.bryma.betim.swine.model.Peer;
 import io.bryma.betim.swine.model.Piglet;
 import io.bryma.betim.swine.repositories.PigletRepository;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class PigletService {
@@ -26,4 +29,7 @@ public class PigletService {
         return pigletRepository.findById(piglet.getId()).get(); //todo update this
    }
 
+   public List<Piglet> getPiglets(Peer peer){
+        return pigletRepository.findByOwner(peer);
+   }
 }

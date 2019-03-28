@@ -4,13 +4,13 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import com.google.common.collect.ImmutableList;
+import eu.smartsocietyproject.DTO.NegotiationHandlerDTO;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.CompositionHandler;
 import io.bryma.betim.swine.exceptions.PigletCBTLifecycleException;
 import io.bryma.betim.swine.piglet.PigletPlan;
-import io.bryma.betim.swine.services.NegotiationService;
 
 import java.util.Collection;
 
@@ -20,24 +20,19 @@ public class PigletComposition extends AbstractActor implements CompositionHandl
     private ActorRef parent;
     private ApplicationContext applicationContext;
     private TaskRequest taskRequest;
-    private NegotiationService negotiationService;
-    private String url;
 
-    private PigletComposition(ApplicationContext context, TaskRequest taskRequest, NegotiationService negotiationService
-        , String url) {
+    private PigletComposition(ApplicationContext context, TaskRequest taskRequest) {
         this.applicationContext = context;
         this.taskRequest = taskRequest;
-        this.negotiationService = negotiationService;
     }
 
-    static public Props props(ApplicationContext context, TaskRequest taskRequest, NegotiationService negotiationService
-        , String url) {
+    static public Props props(ApplicationContext context, TaskRequest taskRequest) {
         return Props.create(PigletComposition.class, () ->
-                new PigletComposition(context, taskRequest, negotiationService, url));
+                new PigletComposition(context, taskRequest));
     }
 
     @Override
-    public void preStart() throws Exception {
+    public void preStart() {
         this.parent = getContext().getParent();
     }
 
@@ -55,7 +50,8 @@ public class PigletComposition extends AbstractActor implements CompositionHandl
 
             CollectiveWithPlan collectiveWithPlan
                     = CollectiveWithPlan.of(provisioned, plan);
-             parent.tell(ImmutableList.of(collectiveWithPlan), getSelf());
+            NegotiationHandlerDTO negotiationHandlerDTO = new NegotiationHandlerDTO(ImmutableList.of(collectiveWithPlan));
+             parent.tell(negotiationHandlerDTO, getSelf());
         } catch (PeerManagerException e) {
             throw new PigletCBTLifecycleException(e.getMessage());
         }

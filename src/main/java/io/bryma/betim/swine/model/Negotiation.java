@@ -18,17 +18,17 @@ public class Negotiation {
     private String type;
     private JsonNode json;
     @DBRef
-    private Set<Member> negotiables;
+    private Set<Member> negotiables = new HashSet<>();
     @DBRef
-    private Set<Member> agreed;
+    private Set<Member> agreed = new HashSet<>();
     private boolean done;
-    private String collectiveID;
+    private String actorPath;
 
-    public Negotiation(String type, JsonNode json, Set<Member> negotiables,  String collectiveID) {
+    public Negotiation(String type, JsonNode json, Set<Member> negotiables, String actorPath) {
         this.type = type;
         this.json = json;
         this.negotiables = negotiables;
-        this.collectiveID = collectiveID;
+        this.actorPath = actorPath;
     }
 
     public Negotiation() {
@@ -82,11 +82,11 @@ public class Negotiation {
         this.done = done;
     }
 
-    public String getCollectiveID() {
-        return collectiveID;
+    public String getActorPath() {
+        return actorPath;
     }
 
-    public void setCollectiveID(String collectiveID) {
-        this.collectiveID = collectiveID;
+    public void setActorPath(String actorPath) {
+        this.actorPath = actorPath;
     }
 }

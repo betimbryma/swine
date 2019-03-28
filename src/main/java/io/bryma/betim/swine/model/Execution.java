@@ -9,35 +9,34 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Document(collection = "executions")
 public class Execution {
 
     @Id
     private String id;
-    private PigletTaskResult pigletTaskResult;
+    private List<String> pigletTaskResult = new ArrayList<>();
     private String collectiveId;
     @DBRef
-    private Set<Member> executors;
+    private Set<Member> executors = new HashSet<>();
     @JsonFormat(pattern = "yyyy-mm-dd")
-    private Date startDate;
+    private LocalDateTime startDate;
     @JsonFormat(pattern = "yyyy-mm-dd")
-    private Date endDate;
+    private LocalDateTime endDate;
     private String type;
-    private JsonNode json;
+    private List<JsonNode> json;
     private PigletState state = PigletState.SCHEDULED;
     private String ownerId;
     private String pigletId;
+    private String actorPath;
 
     public Execution() {
     }
 
-    public Execution(String collectiveId, Set<Member> executors,
-                     Date startDate, Date endDate, String type, JsonNode json, String ownerId, String pigletId) {
-        this.collectiveId = collectiveId;
-        this.executors = executors;
+    public Execution(LocalDateTime startDate, LocalDateTime endDate,
+                     String type, List<JsonNode> json, String ownerId, String pigletId) {
         this.startDate = startDate;
         this.endDate = endDate;
         this.type = type;
@@ -54,11 +53,11 @@ public class Execution {
         this.id = id;
     }
 
-    public PigletTaskResult getPigletTaskResult() {
+    public List<String> getPigletTaskResult() {
         return pigletTaskResult;
     }
 
-    public void setPigletTaskResult(PigletTaskResult pigletTaskResult) {
+    public void setPigletTaskResult(List<String> pigletTaskResult) {
         this.pigletTaskResult = pigletTaskResult;
     }
 
@@ -78,19 +77,19 @@ public class Execution {
         this.executors = executors;
     }
 
-    public Date getStartDate() {
+    public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(Date startDate) {
+    public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
 
-    public Date getEndDate() {
+    public LocalDateTime getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(Date endDate) {
+    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 
@@ -102,11 +101,11 @@ public class Execution {
         this.type = type;
     }
 
-    public JsonNode getJson() {
+    public List<JsonNode> getJson() {
         return json;
     }
 
-    public void setJson(JsonNode json) {
+    public void setJson(List<JsonNode> json) {
         this.json = json;
     }
 
@@ -133,4 +132,13 @@ public class Execution {
     public void setPigletId(String pigletId) {
         this.pigletId = pigletId;
     }
+
+    public String getActorPath() {
+        return actorPath;
+    }
+
+    public void setActorPath(String actorPath) {
+        this.actorPath = actorPath;
+    }
+
 }

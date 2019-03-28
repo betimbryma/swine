@@ -7,11 +7,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "piglets")
 public class Piglet {
-
     @Id
     private String id;
     @DBRef
@@ -20,16 +20,16 @@ public class Piglet {
     private Peer owner;
     @NotBlank(message = "Piglet description is required")
     private String description;
-    @NotBlank(message = "Piglet name is requried")
+    @NotBlank(message = "Piglet name is required")
     private String name;
     @DBRef
-    private List<Execution> collectiveBasedTasks;
+    private List<Execution> collectiveBasedTasks = new ArrayList<>();
 
     public Piglet() {
     }
 
     public Piglet(@NotNull(message = "Owner cannot be null") Peer owner, @NotBlank(message = "Piglet description is required") String description,
-                  @NotBlank(message = "Piglet name is requried") String name, List<Execution> collectiveBasedTasks) {
+                  @NotBlank(message = "Piglet name is required") String name, List<Execution> collectiveBasedTasks) {
         this.owner = owner;
         this.description = description;
         this.name = name;

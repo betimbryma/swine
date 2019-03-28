@@ -10,6 +10,7 @@ import eu.smartsocietyproject.pf.Collective;
 import eu.smartsocietyproject.pf.TaskRequest;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.ProvisioningHandler;
+import eu.smartsocietyproject.pf.enummerations.State;
 
 import java.util.Optional;
 
@@ -29,7 +30,7 @@ public class PigletProvisioning extends AbstractActor implements ProvisioningHan
     }
 
     @Override
-    public void preStart() throws Exception {
+    public void preStart() {
         this.parent = getContext().getParent();
     }
 
@@ -40,10 +41,9 @@ public class PigletProvisioning extends AbstractActor implements ProvisioningHan
             Collective collective = inputCollective.orElseThrow(CBTLifecycleException::new);
             ApplicationBasedCollective applicationBasedCollective = collective.toApplicationBasedCollective();
             context.getPeerManager().persistCollective(applicationBasedCollective);
-
             parent.tell(applicationBasedCollective, getSelf());
         } catch (PeerManagerException e) {
-            throw new CBTLifecycleException(e);
+            parent.tell(State.PROV_FAIL, getSelf());
         }
 
     }

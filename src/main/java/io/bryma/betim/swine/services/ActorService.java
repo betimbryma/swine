@@ -1,7 +1,6 @@
 package io.bryma.betim.swine.services;
 
 import akka.actor.ActorSystem;
-import io.bryma.betim.swine.engine.PigletInstance;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,8 +12,5 @@ public class ActorService {
         this.actorSystem = actorSystem;
     }
 
-    public void startPiglet(PigletInstance pigletInstance){
-
-    }
 
 }
