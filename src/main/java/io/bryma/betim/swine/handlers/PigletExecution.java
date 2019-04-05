@@ -1,8 +1,6 @@
 package io.bryma.betim.swine.handlers;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
+import akka.actor.*;
 import at.ac.tuwien.dsg.smartcom.exception.CommunicationException;
 import at.ac.tuwien.dsg.smartcom.model.Identifier;
 import at.ac.tuwien.dsg.smartcom.model.Message;
@@ -14,42 +12,46 @@ import eu.smartsocietyproject.pf.TaskResult;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.ExecutionHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
-import eu.smartsocietyproject.smartcom.SmartComServiceRestImpl;
-import io.bryma.betim.swine.config.SwineConstants;
 import io.bryma.betim.swine.exceptions.PigletNotFoundException;
-import io.bryma.betim.swine.piglet.PigletPlan;
 import io.bryma.betim.swine.piglet.PigletTaskResult;
 import io.bryma.betim.swine.services.ExecutionService;
-import org.junit.Assert;
+import java.time.Duration;
 
-import javax.annotation.PostConstruct;
+public class PigletExecution extends AbstractActorWithTimers implements ExecutionHandler {
 
-public class PigletExecution extends AbstractActor implements ExecutionHandler {
-
-    private PigletTaskResult taskResult = new PigletTaskResult();
+    private PigletTaskResult taskResult;
     private ActorRef parent;
     private final ApplicationContext context;
     private final ExecutionService executionService;
     private final String executionId;
-    private final String url;
+    private final String TICK = "TICK";
+    private Duration duration;
 
-    public static Props props(ApplicationContext context, ExecutionService executionService, String executionId, String url) {
-        return Props.create(PigletExecution.class, () -> new PigletExecution(context, executionService, executionId, url));
+    @Override
+    public void preStart() {
+        this.parent = getContext().getParent();
     }
 
-    private PigletExecution(ApplicationContext context, ExecutionService executionService, String executionId, String url){
+    public static Props props(ApplicationContext context, ExecutionService executionService, String executionId,
+            Duration duration) {
+        return Props.create(PigletExecution.class, () -> new PigletExecution(context, executionService, executionId, duration));
+    }
+
+    private PigletExecution(ApplicationContext context, ExecutionService executionService, String executionId,
+                            Duration duration){
         this.context = context;
         this.executionService = executionService;
         this.executionId = executionId;
-        this.url = url;
+        this.duration = duration;
     }
 
     @Override
-    public void execute(ApplicationContext context, CollectiveWithPlan agreed) throws CBTLifecycleException {
-
+    public void execute(ApplicationContext context, CollectiveWithPlan agreed) {
+        if(duration != null && duration.getSeconds() >= 1)
+            getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
         String stringBuilder = "Hi, \n You have been invited to participate in a Collective Based Task. " +
                 "Click on the link below for more information:\n" +
-                url + executionId +
+                executionService.getUrl() + executionId +
                 "\n Best regards: \n SmartSociety";
 
         try {
@@ -80,7 +82,10 @@ public class PigletExecution extends AbstractActor implements ExecutionHandler {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(PigletTaskResult.class,
-                        pigletTaskResult -> parent.tell(pigletTaskResult, getSelf()))
+                        pigletTaskResult -> {
+                            this.taskResult = pigletTaskResult;
+                            parent.tell(pigletTaskResult, getSelf());
+                        })
                 .match(CollectiveWithPlan.class,
                         collectiveWithPlan -> execute(context, collectiveWithPlan))
                 .build();

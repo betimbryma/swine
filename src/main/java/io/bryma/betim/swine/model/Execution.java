@@ -1,10 +1,8 @@
 package io.bryma.betim.swine.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.databind.JsonNode;
 import eu.smartsocietyproject.pf.Member;
 import io.bryma.betim.swine.config.PigletState;
-import io.bryma.betim.swine.piglet.PigletTaskResult;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -17,7 +15,7 @@ public class Execution {
 
     @Id
     private String id;
-    private List<String> pigletTaskResult = new ArrayList<>();
+    private List<String> results = new ArrayList<>();
     private String collectiveId;
     @DBRef
     private Set<Member> executors = new HashSet<>();
@@ -26,7 +24,7 @@ public class Execution {
     @JsonFormat(pattern = "yyyy-mm-dd")
     private LocalDateTime endDate;
     private String type;
-    private List<JsonNode> json;
+    private String request;
     private PigletState state = PigletState.SCHEDULED;
     private String ownerId;
     private String pigletId;
@@ -36,11 +34,11 @@ public class Execution {
     }
 
     public Execution(LocalDateTime startDate, LocalDateTime endDate,
-                     String type, List<JsonNode> json, String ownerId, String pigletId) {
+                     String type, String request, String ownerId, String pigletId) {
         this.startDate = startDate;
         this.endDate = endDate;
         this.type = type;
-        this.json = json;
+        this.request = request;
         this.pigletId = pigletId;
         this.ownerId = ownerId;
     }
@@ -51,14 +49,6 @@ public class Execution {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public List<String> getPigletTaskResult() {
-        return pigletTaskResult;
-    }
-
-    public void setPigletTaskResult(List<String> pigletTaskResult) {
-        this.pigletTaskResult = pigletTaskResult;
     }
 
     public String getCollectiveId() {
@@ -101,14 +91,6 @@ public class Execution {
         this.type = type;
     }
 
-    public List<JsonNode> getJson() {
-        return json;
-    }
-
-    public void setJson(List<JsonNode> json) {
-        this.json = json;
-    }
-
     public PigletState getState() {
         return state;
     }
@@ -141,4 +123,19 @@ public class Execution {
         this.actorPath = actorPath;
     }
 
+    public String getRequest() {
+        return request;
+    }
+
+    public void setRequest(String request) {
+        this.request = request;
+    }
+
+    public List<String> getResults() {
+        return results;
+    }
+
+    public void setResults(List<String> results) {
+        this.results = results;
+    }
 }

@@ -1,8 +1,6 @@
 package io.bryma.betim.swine.handlers;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
+import akka.actor.*;
 import com.google.common.collect.ImmutableList;
 import eu.smartsocietyproject.DTO.NegotiationHandlerDTO;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
@@ -12,23 +10,28 @@ import eu.smartsocietyproject.pf.cbthandlers.CompositionHandler;
 import io.bryma.betim.swine.exceptions.PigletCBTLifecycleException;
 import io.bryma.betim.swine.piglet.PigletPlan;
 
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.Collection;
 
 
-public class PigletComposition extends AbstractActor implements CompositionHandler {
+public class PigletComposition extends AbstractActorWithTimers implements CompositionHandler {
 
     private ActorRef parent;
     private ApplicationContext applicationContext;
     private TaskRequest taskRequest;
+    private final String TICK = "TICK";
+    private Duration duration;
 
-    private PigletComposition(ApplicationContext context, TaskRequest taskRequest) {
+    private PigletComposition(ApplicationContext context, TaskRequest taskRequest, Duration duration) {
         this.applicationContext = context;
         this.taskRequest = taskRequest;
+        this.duration = duration;
     }
 
-    static public Props props(ApplicationContext context, TaskRequest taskRequest) {
+    static public Props props(ApplicationContext context, TaskRequest taskRequest, Duration duration) {
         return Props.create(PigletComposition.class, () ->
-                new PigletComposition(context, taskRequest));
+                new PigletComposition(context, taskRequest, duration));
     }
 
     @Override
@@ -38,6 +41,8 @@ public class PigletComposition extends AbstractActor implements CompositionHandl
 
     @Override
     public void compose(ApplicationContext context, ApplicationBasedCollective provisioned, TaskRequest t) throws CBTLifecycleException {
+        if(duration != null && duration.getSeconds() >= 1)
+            getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
         try{
             ResidentCollective residentCollective
                     = context.getPeerManager()

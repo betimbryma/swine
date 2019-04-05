@@ -1,8 +1,5 @@
 package io.bryma.betim.swine.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import eu.smartsocietyproject.pf.Member;
-import eu.smartsocietyproject.pf.TaskRequest;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,17 +13,17 @@ public class Negotiation {
     @Id
     private String id;
     private String type;
-    private JsonNode json;
+    private String request;
     @DBRef
-    private Set<Member> negotiables = new HashSet<>();
+    private Set<Peer> negotiables = new HashSet<>();
     @DBRef
-    private Set<Member> agreed = new HashSet<>();
+    private Set<Peer> agreed = new HashSet<>();
     private boolean done;
     private String actorPath;
 
-    public Negotiation(String type, JsonNode json, Set<Member> negotiables, String actorPath) {
+    public Negotiation(String type, String request, Set<Peer> negotiables, String actorPath) {
         this.type = type;
-        this.json = json;
+        this.request = request;
         this.negotiables = negotiables;
         this.actorPath = actorPath;
     }
@@ -50,27 +47,27 @@ public class Negotiation {
         this.type = type;
     }
 
-    public JsonNode getJson() {
-        return json;
+    public String getRequest() {
+        return request;
     }
 
-    public void setJson(JsonNode json) {
-        this.json = json;
+    public void setRequest(String request) {
+        this.request = request;
     }
 
-    public Set<Member> getNegotiables() {
+    public Set<Peer> getNegotiables() {
         return negotiables;
     }
 
-    public void setNegotiables(Set<Member> negotiables) {
+    public void setNegotiables(Set<Peer> negotiables) {
         this.negotiables = negotiables;
     }
 
-    public Set<Member> getAgreed() {
+    public Set<Peer> getAgreed() {
         return agreed;
     }
 
-    public void setAgreed(Set<Member> agreed) {
+    public void setAgreed(Set<Peer> agreed) {
         this.agreed = agreed;
     }
 

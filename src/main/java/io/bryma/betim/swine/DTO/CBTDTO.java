@@ -1,10 +1,8 @@
 package io.bryma.betim.swine.DTO;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 public class CBTDTO {
@@ -22,9 +20,10 @@ public class CBTDTO {
     private String unit;
     private List<JsonNode> queries;
     private String privateKey;
-    private Integer qor;
+    private Double qor;
     private Integer quantity;
     private String pigletId;
+    private String smartContractAddress;
 
     public LocalDateTime getStartDate() {
         return startDate;
@@ -130,11 +129,11 @@ public class CBTDTO {
         this.privateKey = privateKey;
     }
 
-    public Integer getQor() {
+    public Double getQor() {
         return qor;
     }
 
-    public void setQor(Integer qor) {
+    public void setQor(Double qor) {
         this.qor = qor;
     }
 
@@ -152,5 +151,13 @@ public class CBTDTO {
 
     public void setPigletId(String pigletId) {
         this.pigletId = pigletId;
+    }
+
+    public String getSmartContractAddress() {
+        return smartContractAddress;
+    }
+
+    public void setSmartContractAddress(String smartContractAddress) {
+        this.smartContractAddress = smartContractAddress;
     }
 }

@@ -12,15 +12,20 @@ import io.bryma.betim.swine.exceptions.PeerException;
 import io.bryma.betim.swine.model.Negotiation;
 import io.bryma.betim.swine.model.Peer;
 import io.bryma.betim.swine.repositories.NegotiationRepository;
+import jnr.a64asm.Mem;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class NegotiationService {
 
     private final NegotiationRepository negotiationRepository;
     private final ActorSystem actorSystem;
+    @Value("${swine.url}")
+    private String swineUrl;
 
     public NegotiationService(NegotiationRepository negotiationRepository, ActorSystem actorSystem) {
         this.negotiationRepository = negotiationRepository;
@@ -31,17 +36,16 @@ public class NegotiationService {
 
         Negotiation negotiation = negotiationRepository.findById(negotiationDTO.getNegotiationID())
                 .orElseThrow(() -> new PeerException("Negotiation not found."));
-        Member voter = Member.of(peer.getPeerId(), peer.getRole());
-        Set<Member> negotiables = negotiation.getNegotiables();
+        Set<Peer> negotiables = negotiation.getNegotiables();
 
-        if(!negotiables.contains(voter) || negotiation.isDone())
-            throw new PeerException("Cannot vote");
+        if(!negotiables.contains(peer) || negotiation.isDone())
+            throw new PeerException("Cannot negotiate");
 
-        Set<Member> agreed = negotiation.getAgreed();
+        Set<Peer> agreed = negotiation.getAgreed();
 
         if(negotiationDTO.getVote() == Vote.YES) {
-            agreed.add(voter);
-            notify(negotiation.getActorPath(), voter);
+            agreed.add(peer);
+            notify(negotiation.getActorPath(), peer);
         }
 
         if(agreed.size() == negotiables.size())
@@ -53,14 +57,19 @@ public class NegotiationService {
 
     public String createNegotiation(Set<Member> members, TaskRequest taskRequest, ActorPath actorPath){
 
-        Negotiation negotiation = new Negotiation(taskRequest.getType(), taskRequest.getDefinition().getJson(),
-                members, actorPath.toString());
+        Set<Peer> voters = members.stream().map(Peer::of).collect(Collectors.toSet());
+        Negotiation negotiation = new Negotiation(taskRequest.getType(), taskRequest.getDefinition().toString(),
+                voters, actorPath.toString());
         return negotiationRepository.save(negotiation).getId();
     }
 
-    private void notify(String path, Member peer){
+    private void notify(String path, Peer peer){
         ActorSelection actorSelection = actorSystem.actorSelection(path);
         ActorRef negotiationHandler = actorSelection.anchor();
         negotiationHandler.tell(peer, ActorRef.noSender());
+    }
+
+    public String getUrl() {
+        return swineUrl+"negotiation/";
     }
 }

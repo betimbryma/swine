@@ -1,8 +1,6 @@
 package io.bryma.betim.swine.handlers;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.Props;
+import akka.actor.*;
 import at.ac.tuwien.dsg.smartcom.exception.CommunicationException;
 import at.ac.tuwien.dsg.smartcom.model.Identifier;
 import at.ac.tuwien.dsg.smartcom.model.Message;
@@ -14,47 +12,54 @@ import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.NegotiationHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.services.NegotiationService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public class PigletNegotiation extends AbstractActor implements NegotiationHandler {
+public class PigletNegotiation extends AbstractActorWithTimers implements NegotiationHandler {
 
     private ActorRef parent;
     private ApplicationContext applicationContext;
     private TaskRequest taskRequest;
     private NegotiationService negotiationService;
-    private String url;
     private CollectiveWithPlan collectiveWithPlan;
     private ResidentCollective residentCollective;
     private Set<Member> negotiators;
     private Set<Member> agreed;
     private String kind;
     private Plan plan;
+    private final String TICK = "TICK";
+    private Duration duration;
 
-    private PigletNegotiation(ApplicationContext applicationContext, TaskRequest taskRequest, NegotiationService negotiationService, String url) {
+    private PigletNegotiation(ApplicationContext applicationContext, TaskRequest taskRequest,
+                              NegotiationService negotiationService, Duration duration) {
         this.applicationContext = applicationContext;
         this.taskRequest = taskRequest;
-        this.negotiationService = negotiationService;
-        this.url = url;
         this.agreed = new HashSet<>();
         this.negotiators = new HashSet<>();
+        this.negotiationService = negotiationService;
+        this.duration = duration;
     }
 
-    static public Props props(ApplicationContext applicationContext, TaskRequest taskRequest, NegotiationService negotiationService, String url) {
+    static public Props props(ApplicationContext applicationContext, TaskRequest taskRequest,
+                              NegotiationService negotiationService, Duration duration) {
         return Props.create(PigletNegotiation.class,
-                () -> new PigletNegotiation(applicationContext, taskRequest, negotiationService, url));
+                () -> new PigletNegotiation(applicationContext, taskRequest, negotiationService, duration));
     }
 
     @Override
-    public void preStart() throws Exception {
+    public void preStart() {
         this.parent = getContext().getParent();
     }
 
     @Override
     public void negotiate(ApplicationContext context, ImmutableList<CollectiveWithPlan> negotiables) throws CBTLifecycleException {
-
+        if(duration != null && duration.getSeconds() >= 1)
+            getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
         try {
             this.collectiveWithPlan = negotiables.get(0);
             this.kind = collectiveWithPlan.getCollective().getKind();
@@ -70,7 +75,7 @@ public class PigletNegotiation extends AbstractActor implements NegotiationHandl
 
             String stringBuilder = "Hi, \n You have been invited to participate in a Collective Based Task. " +
                     "Click on the link below for more information:\n" +
-                    url + negotiationId +
+                    negotiationService.getUrl() + negotiationId +
                     "\n Best regards: \n SmartSociety";
 
             Message message = new Message.MessageBuilder()
