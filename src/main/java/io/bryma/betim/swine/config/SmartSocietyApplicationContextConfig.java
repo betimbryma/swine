@@ -1,5 +1,7 @@
 package io.bryma.betim.swine.config;
 
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import eu.smartsocietyproject.payment.PaymentService;
 import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.smartcom.SmartComServiceRestImpl;
@@ -13,20 +15,20 @@ import java.io.IOException;
 @Configuration
 public class SmartSocietyApplicationContextConfig {
 
-    @Value("${peermanager.port}")
-    private int port;
     @Autowired
     private PaymentService paymentService;
+    @Autowired
+    private MongoDatabase mongoDatabase;
 
     @Bean
-    public SmartSocietyApplicationContext getSmartSocietyApplicationContext() throws IOException {
+    public SmartSocietyApplicationContext getSmartSocietyApplicationContext() {
 
         CollectiveKindRegistry kindRegistry = CollectiveKindRegistry
                 .builder().register(CollectiveKind.EMPTY).build();
-        MongoRunner runner = MongoRunner.withPort(port);
+
 
         PeerManagerMongoProxy.Factory pmFactory
-                = PeerManagerMongoProxy.factory(runner.getMongoDb());
+                = PeerManagerMongoProxy.factory(mongoDatabase);
 
         return new SmartSocietyApplicationContext(kindRegistry,
                 pmFactory,

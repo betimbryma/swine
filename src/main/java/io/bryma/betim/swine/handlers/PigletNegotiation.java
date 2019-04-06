@@ -11,6 +11,7 @@ import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.NegotiationHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
+import io.bryma.betim.swine.config.LocalMail;
 import io.bryma.betim.swine.services.NegotiationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -48,7 +49,8 @@ public class PigletNegotiation extends AbstractActorWithTimers implements Negoti
     static public Props props(ApplicationContext applicationContext, TaskRequest taskRequest,
                               NegotiationService negotiationService, Duration duration) {
         return Props.create(PigletNegotiation.class,
-                () -> new PigletNegotiation(applicationContext, taskRequest, negotiationService, duration));
+                () -> new PigletNegotiation(applicationContext, taskRequest, negotiationService,
+                        duration));
     }
 
     @Override

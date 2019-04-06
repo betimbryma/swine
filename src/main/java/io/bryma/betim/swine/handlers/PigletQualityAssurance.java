@@ -3,6 +3,7 @@ package io.bryma.betim.swine.handlers;
 import akka.actor.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.mongodb.MongoClient;
 import eu.smartsocietyproject.DTO.ResultDTO;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.peermanager.query.PeerQuery;
@@ -12,6 +13,7 @@ import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.*;
 import eu.smartsocietyproject.pf.enummerations.State;
 import eu.smartsocietyproject.smartcom.SmartComServiceRestImpl;
+import io.bryma.betim.swine.config.LocalMail;
 import io.bryma.betim.swine.handlers.qaHandler.QAExecutionHandler;
 import io.bryma.betim.swine.handlers.qaHandler.QAQualityAssuranceHandler;
 import io.bryma.betim.swine.piglet.PigletTaskRequest;
@@ -36,7 +38,8 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
     private ExecutionService executionService;
 
     public static Props props(ApplicationContext context, QualityAssuranceService qualityAssuranceService,
-            NegotiationService negotiationService, ExecutionService executionService, TaskRequest taskRequest, Duration duration) {
+            NegotiationService negotiationService, ExecutionService executionService, TaskRequest taskRequest,
+                              Duration duration) {
         return Props.create(PigletQualityAssurance.class, () -> new PigletQualityAssurance(context, qualityAssuranceService,
                 negotiationService, executionService, taskRequest, duration));
     }
@@ -78,16 +81,10 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
 
         CollectiveKindRegistry kindRegistry = CollectiveKindRegistry
                 .builder().register(CollectiveKind.EMPTY).build();
-        MongoRunner runner;
-        try {
-            runner = MongoRunner.withPort(6668);
-        } catch (IOException e) {
-            parent.tell(State.QUALITY_ASSURANCE_FAIL, getSelf());
-            return;
-        }
+
 
         PeerManagerMongoProxy.Factory pmFactory
-                = PeerManagerMongoProxy.factory(runner.getMongoDb());
+                = PeerManagerMongoProxy.factory(new MongoClient("localhost", 6668).getDatabase("swine"));
 
         SmartSocietyApplicationContext smartSocietyApplicationContext= new SmartSocietyApplicationContext(kindRegistry,
                 pmFactory,
@@ -124,7 +121,7 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
                 =  TaskFlowDefinition.onDemandWithoutOpenCall(ImmutableList.of(provisioningProps),
                 ImmutableList.of(negotiationProps), ImmutableList.of(executionProps), ImmutableList.of(qualityAssuranceProps)).withCollectiveForProvisioning(collective);
 
-        ActorRef collectiveBasedTask = getContext().getSystem()
+        ActorRef collectiveBasedTask = getContext()
                 .actorOf(CollectiveBasedTask.props(smartSocietyApplicationContext, pigletTaskRequest,
                         taskFlowDefinition));
 

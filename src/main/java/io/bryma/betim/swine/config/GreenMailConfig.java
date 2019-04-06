@@ -19,9 +19,10 @@ public class GreenMailConfig {
 
         GreenMail greenMail = new GreenMail(ServerSetupTest.ALL);
 
+        greenMail.start();
+
         greenMail.setUser(username, username, password);
 
-        greenMail.start();
 
         return greenMail;
     }

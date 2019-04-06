@@ -36,10 +36,10 @@ public class Peer implements UserDetails {
         this.email = jsonNode.get("email").asText();
     }
 
-    public Peer(String role, String address, String password) {
+    public Peer(String id, String role, String address) {
+        this.id = id;
         this.role = role;
         this.address = address;
-        this.password = password;
     }
 
     public static Peer of(Member member) {

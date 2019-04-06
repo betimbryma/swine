@@ -3,24 +3,19 @@ package io.bryma.betim.swine.services;
 import at.ac.tuwien.dsg.smartcom.model.Identifier;
 import at.ac.tuwien.dsg.smartcom.model.PeerChannelAddress;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import eu.smartsocietyproject.peermanager.PeerManager;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.pf.AttributeType;
-import eu.smartsocietyproject.pf.Member;
 import eu.smartsocietyproject.pf.Peer;
 import eu.smartsocietyproject.pf.SmartSocietyApplicationContext;
 import eu.smartsocietyproject.pf.helper.InternalPeerManager;
 import eu.smartsocietyproject.pf.helper.PeerIntermediary;
 import eu.smartsocietyproject.smartcom.ObjectMapperSingelton;
-import io.bryma.betim.swine.repositories.PeerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 @Service

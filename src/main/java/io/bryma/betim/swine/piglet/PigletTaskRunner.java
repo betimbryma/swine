@@ -109,7 +109,7 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
             ).withCollectiveForProvisioning(collective) : TaskFlowDefinition.onDemandWithoutOpenCall(ImmutableList.of(provisioningProps),
                     ImmutableList.of(negotiationProps), ImmutableList.of(executionProps), ImmutableList.of(qualityAssuranceProps)).withCollectiveForProvisioning(collective);
 
-            ActorRef collectiveBasedTask = getContext().getSystem()
+            ActorRef collectiveBasedTask = getContext()
                     .actorOf(CollectiveBasedTask.props(smartSocietyApplicationContext, pigletTaskRequest,
                             taskFlowDefinition));
 
@@ -135,4 +135,6 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
     public JsonNode getStateDescription() {
         return this.pigletTaskRequest.getDefinition().getJson();
     }
+
+
 }

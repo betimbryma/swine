@@ -8,8 +8,6 @@ import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.pf.ApplicationContext;
 import eu.smartsocietyproject.pf.CollectiveWithPlan;
 import eu.smartsocietyproject.pf.ResidentCollective;
-import eu.smartsocietyproject.pf.TaskResult;
-import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.ExecutionHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.exceptions.PigletNotFoundException;
@@ -34,7 +32,8 @@ public class PigletExecution extends AbstractActorWithTimers implements Executio
 
     public static Props props(ApplicationContext context, ExecutionService executionService, String executionId,
             Duration duration) {
-        return Props.create(PigletExecution.class, () -> new PigletExecution(context, executionService, executionId, duration));
+        return Props.create(PigletExecution.class, () -> new PigletExecution(context, executionService, executionId,
+                duration));
     }
 
     private PigletExecution(ApplicationContext context, ExecutionService executionService, String executionId,
@@ -60,6 +59,7 @@ public class PigletExecution extends AbstractActorWithTimers implements Executio
                     .readCollectiveById(agreed.getCollective().getId());
 
             executionService.initiateExecution(residentCollective, executionId, getSelf().path().toString());
+
 
             Message message = new Message.MessageBuilder()
                     .setType("swine")
