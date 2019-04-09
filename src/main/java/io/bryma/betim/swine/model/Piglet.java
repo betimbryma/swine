@@ -1,54 +1,51 @@
 package io.bryma.betim.swine.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-@Document(collection = "piglets")
+@Entity
 public class Piglet {
+
     @Id
-    private String id;
-    @DBRef
-    @NotNull(message = "Owner cannot be null")
-    @Indexed
-    private Peer owner;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @NotNull(message = "Peer cannot be null")
+    private String owner;
     @NotBlank(message = "Piglet description is required")
     private String description;
     @NotBlank(message = "Piglet name is required")
     private String name;
-    @DBRef
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "piglet")
     private List<Execution> collectiveBasedTasks = new ArrayList<>();
 
     public Piglet() {
     }
 
-    public Piglet(@NotNull(message = "Owner cannot be null") Peer owner, @NotBlank(message = "Piglet description is required") String description,
-                  @NotBlank(message = "Piglet name is required") String name, List<Execution> collectiveBasedTasks) {
+    public Piglet(@NotNull(message = "Peer cannot be null") String owner, @NotBlank(message = "Piglet description is required") String description, @NotBlank(message = "Piglet name is required") String name) {
         this.owner = owner;
         this.description = description;
         this.name = name;
-        this.collectiveBasedTasks = collectiveBasedTasks;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public Peer getOwner() {
+    public String getOwner() {
         return owner;
     }
 
-    public void setOwner(Peer owner) {
+    public void setOwner(String owner) {
         this.owner = owner;
     }
 

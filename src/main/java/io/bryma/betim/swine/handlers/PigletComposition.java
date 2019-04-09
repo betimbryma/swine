@@ -7,8 +7,10 @@ import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.CompositionHandler;
+import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.exceptions.PigletCBTLifecycleException;
 import io.bryma.betim.swine.piglet.PigletPlan;
+import org.omg.CORBA.COMM_FAILURE;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
@@ -40,7 +42,8 @@ public class PigletComposition extends AbstractActorWithTimers implements Compos
     }
 
     @Override
-    public void compose(ApplicationContext context, ApplicationBasedCollective provisioned, TaskRequest t) throws CBTLifecycleException {
+    public void compose(ApplicationContext context, ApplicationBasedCollective provisioned,
+                        TaskRequest t) {
         if(duration != null && duration.getSeconds() >= 1)
             getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
         try{
@@ -55,14 +58,15 @@ public class PigletComposition extends AbstractActorWithTimers implements Compos
 
             CollectiveWithPlan collectiveWithPlan
                     = CollectiveWithPlan.of(provisioned, plan);
-            NegotiationHandlerDTO negotiationHandlerDTO = new NegotiationHandlerDTO(ImmutableList.of(collectiveWithPlan));
+            NegotiationHandlerDTO negotiationHandlerDTO =
+                    new NegotiationHandlerDTO(ImmutableList.of(collectiveWithPlan));
              parent.tell(negotiationHandlerDTO, getSelf());
         } catch (PeerManagerException e) {
-            throw new PigletCBTLifecycleException(e.getMessage());
+            parent.tell(State.COMP_FAIL, getSelf());
         }
     }
 
-    private void compose(ApplicationBasedCollective provisioned) throws CBTLifecycleException {
+    private void compose(ApplicationBasedCollective provisioned) {
         compose(applicationContext, provisioned, taskRequest);
     }
 

@@ -6,11 +6,12 @@ import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import eu.smartsocietyproject.pf.Member;
 import eu.smartsocietyproject.pf.TaskRequest;
-import eu.smartsocietyproject.pf.TaskResult;
 import io.bryma.betim.swine.DTO.QualityAssuranceDTO;
 import io.bryma.betim.swine.exceptions.PeerException;
-import io.bryma.betim.swine.model.Peer;
-import io.bryma.betim.swine.model.QualityAssurance;
+import io.bryma.betim.swine.exceptions.QualityAssuranceException;
+import io.bryma.betim.swine.model.*;
+import io.bryma.betim.swine.repositories.ExecutionRepository;
+import io.bryma.betim.swine.repositories.QualityAssuranceInstanceRepository;
 import io.bryma.betim.swine.repositories.QualityAssuranceRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,43 +23,54 @@ import java.util.stream.Collectors;
 public class QualityAssuranceService {
 
     private final QualityAssuranceRepository qualityAssuranceRepository;
+    private final ExecutionRepository executionRepository;
+    private final QualityAssuranceInstanceRepository qaiRepository;
     private final ActorSystem actorSystem;
     @Value("${swine.url}")
     private String swineUrl;
 
-    public QualityAssuranceService(QualityAssuranceRepository qualityAssuranceRepository, ActorSystem actorSystem) {
+    public QualityAssuranceService(QualityAssuranceRepository qualityAssuranceRepository,
+                                   ExecutionRepository executionRepository, ActorSystem actorSystem,
+                                   QualityAssuranceInstanceRepository qaiRepository) {
         this.qualityAssuranceRepository = qualityAssuranceRepository;
         this.actorSystem = actorSystem;
+        this.qaiRepository = qaiRepository;
+        this.executionRepository = executionRepository;
     }
 
-    public void qualityAssurance(Peer peer, QualityAssuranceDTO dto) throws PeerException {
+    public QualityAssuranceDTO getQualityAssurance(String peer, Long qaID) throws PeerException, QualityAssuranceException {
 
-        QualityAssurance qualityAssurance = qualityAssuranceRepository.findById(dto.getQualityAssuranceId())
-                .orElseThrow(() -> new PeerException("Quality Assurance Instance not found"));
+        QualityAssurance qualityAssurance = qualityAssuranceRepository.findById(qaID)
+                .orElseThrow(() -> new QualityAssuranceException("Quality Assurance not found."));
 
-        Set<QualityAssuranceDTO> qualityAssuranceDTOS = qualityAssurance.getQualityAssuranceVoters();
-        try {
-            QualityAssuranceDTO qualityAssuranceDTO = qualityAssuranceDTOS.stream()
-                    .filter(q -> q.getQualityAssuranceId().equals(dto.getQualityAssuranceId())).collect(Collectors.toList()).get(0);
-            if (qualityAssuranceDTO == null || qualityAssurance.isDone() || qualityAssuranceDTO.isVoted() ||
-                    !qualityAssuranceDTO.getPeer().getId().equals(peer.getId()))
-                throw new PeerException("Cannot vote");
-            qualityAssuranceDTO.setScore(dto.getScore());
-            qualityAssuranceDTO.setVoted(true);
-            notify(qualityAssurance.getActorPath(), QualityAssuranceDTO.of(qualityAssuranceDTO));
-            qualityAssuranceRepository.save(qualityAssurance);
-        } catch (IndexOutOfBoundsException e){
-            throw new PeerException("Quality Assurance Instance does not exist");
-        }
+        QualityAssuranceInstance qa = qaiRepository.getByQualityAssuranceAndPeer(qualityAssurance, peer)
+                .orElseThrow(() -> new QualityAssuranceException("Quality Assurance instance not found"));
+
+        return new QualityAssuranceDTO(qa.getId(), qualityAssurance.getExecution_qa().getRequest(),
+                qualityAssurance.getExecution_qa().getTaskResults()
+                        .stream().map(TaskResult::getResult).collect(Collectors.toList()));
+
 
     }
 
-    public String createQualityAssurance(Set<Member> members, TaskRequest taskRequest, String actorPath){
-        Set<QualityAssuranceDTO> qualityAssuranceDTOS =
-                members.stream().map(member -> new QualityAssuranceDTO(Peer.of(member))).collect(Collectors.toSet());
-        QualityAssurance qualityAssurance = new QualityAssurance(taskRequest.getRequest(),
-                qualityAssuranceDTOS, actorPath);
-        return qualityAssuranceRepository.save(qualityAssurance).getId();
+    public Long createQualityAssurance(Set<Member> members, Long executionId, String actorPath) throws QualityAssuranceException {
+
+        Execution execution = executionRepository.findById(executionId)
+                .orElseThrow(() -> new QualityAssuranceException(
+                        "Quality Assurance task not found"
+                ));
+
+        QualityAssurance qualityAssurance = qualityAssuranceRepository.save(
+                new QualityAssurance(execution, actorPath)
+        );
+
+        members.stream().forEach(member -> {
+            QualityAssuranceInstance instance = new QualityAssuranceInstance(member.getPeerId(), qualityAssurance);
+            qaiRepository.save(instance);
+        });
+
+        return qualityAssurance.getId();
+
     }
 
     private void notify(String path, QualityAssuranceDTO.ImmutableQualityAssuranceDTO qualityAssuranceDTO){
@@ -70,4 +82,5 @@ public class QualityAssuranceService {
     public String getUrl() {
         return swineUrl+"qualityAssurance/";
     }
+
 }

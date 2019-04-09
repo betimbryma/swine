@@ -1,5 +1,6 @@
 package io.bryma.betim.swine.piglet;
 
+import com.google.common.collect.ImmutableList;
 import eu.smartsocietyproject.pf.TaskResult;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -9,7 +10,7 @@ import java.util.List;
 
 public class PigletTaskResult extends TaskResult {
 
-    private List<String> results = new ArrayList<>();
+    private ImmutableList<String> results = ImmutableList.of();
 
     @Override
     public String getResult() {
@@ -21,7 +22,7 @@ public class PigletTaskResult extends TaskResult {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-       results.stream().forEach(result -> {stringBuilder.append(result).append("\n");});
+        results.stream().forEach(result -> {stringBuilder.append(result).append("\n");});
 
         return stringBuilder.toString();
     }
@@ -30,7 +31,7 @@ public class PigletTaskResult extends TaskResult {
         return results;
     }
 
-    public void setResults(List<String> results) {
+    public void setResults(ImmutableList<String> results) {
         this.results = results;
     }
 }

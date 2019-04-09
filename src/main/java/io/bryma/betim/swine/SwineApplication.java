@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.icegreen.greenmail.util.GreenMail;
 import io.bryma.betim.swine.model.Peer;
-import io.bryma.betim.swine.services.PeerService;
+import io.bryma.betim.swine.services.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -26,12 +26,13 @@ public class SwineApplication implements CommandLineRunner {
     @Autowired
     private GreenMail greenMail;
 
+
     public static void main(String[] args) {
         SpringApplication.run(SwineApplication.class, args);
     }
 
     @Override
-    public void run(String... args) {
+    public void run(String... args) throws Exception {
         if (demo) {
 
             List<Peer> peers = new Gson().fromJson(
@@ -41,7 +42,6 @@ public class SwineApplication implements CommandLineRunner {
                                             .getContextClassLoader()
                                             .getResourceAsStream("Peers.json"))), new TypeToken<List<Peer>>() {
                     }.getType());
-
 
             peers.forEach(peer -> {
                 try {

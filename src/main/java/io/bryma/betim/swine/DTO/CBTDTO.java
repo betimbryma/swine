@@ -22,7 +22,7 @@ public class CBTDTO {
     private String privateKey;
     private Double qor;
     private Integer quantity;
-    private String pigletId;
+    private Long pigletId;
     private String smartContractAddress;
 
     public LocalDateTime getStartDate() {
@@ -145,11 +145,11 @@ public class CBTDTO {
         this.quantity = quantity;
     }
 
-    public String getPigletId() {
+    public Long getPigletId() {
         return pigletId;
     }
 
-    public void setPigletId(String pigletId) {
+    public void setPigletId(Long pigletId) {
         this.pigletId = pigletId;
     }
 

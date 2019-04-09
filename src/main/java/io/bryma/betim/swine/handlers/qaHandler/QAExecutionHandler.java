@@ -6,12 +6,14 @@ import akka.actor.Props;
 import at.ac.tuwien.dsg.smartcom.exception.CommunicationException;
 import at.ac.tuwien.dsg.smartcom.model.Identifier;
 import at.ac.tuwien.dsg.smartcom.model.Message;
+import com.google.common.collect.ImmutableList;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.ExecutionHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.DTO.QualityAssuranceDTO;
+import io.bryma.betim.swine.exceptions.QualityAssuranceException;
 import io.bryma.betim.swine.piglet.PigletTaskResult;
 import io.bryma.betim.swine.services.QualityAssuranceService;
 
@@ -25,20 +27,23 @@ public class QAExecutionHandler extends AbstractActor implements ExecutionHandle
     private final QualityAssuranceService qualityAssuranceService;
     private Set<Member> peers = new HashSet<>();
     private Set<QualityAssuranceDTO.ImmutableQualityAssuranceDTO> votes = new HashSet<>();
+    private TaskResult taskResult;
+    private final Long executionId;
 
     @Override
     public void preStart() {
         this.parent = getContext().getParent();
     }
 
-    public static Props props(ApplicationContext context, QualityAssuranceService qualityAssuranceService, TaskRequest taskRequest) {
-        return Props.create(QAExecutionHandler.class, () -> new QAExecutionHandler(context, qualityAssuranceService, taskRequest));
+    public static Props props(ApplicationContext context, QualityAssuranceService qualityAssuranceService, Long executionId) {
+        return Props.create(QAExecutionHandler.class, () ->
+                new QAExecutionHandler(context, qualityAssuranceService, executionId));
     }
 
-    private QAExecutionHandler(ApplicationContext context, QualityAssuranceService qualityAssuranceService, TaskRequest taskRequest){
+    private QAExecutionHandler(ApplicationContext context, QualityAssuranceService qualityAssuranceService, Long executionId){
         this.context = context;
         this.qualityAssuranceService = qualityAssuranceService;
-        this.taskRequest = taskRequest;
+        this.executionId = executionId;
     }
 
     @Override
@@ -49,11 +54,18 @@ public class QAExecutionHandler extends AbstractActor implements ExecutionHandle
                     .readCollectiveById(agreed.getCollective().getId());
             peers = residentCollective.getMembers();
 
-            String id = qualityAssuranceService.createQualityAssurance(peers, taskRequest, getSelf().path().toString());
+            Long id;
+            try {
+                id = qualityAssuranceService.
+                        createQualityAssurance(peers, executionId, getSelf().path().toString());
+            } catch (QualityAssuranceException e) {
+                parent.tell(State.EXEC_FAIL, getSelf());
+                return;
+            }
 
             String stringBuilder = "Hi, \n You have been invited to rate the results of a Collective Based Task. " +
                     "Click on the link below for more information:\n" +
-                    qualityAssuranceService.getUrl() + id +
+                    qualityAssuranceService.getUrl() + id.toString() +
                     "\n Best regards: \n SmartSociety";
 
             Message message = new Message.MessageBuilder()
@@ -72,6 +84,8 @@ public class QAExecutionHandler extends AbstractActor implements ExecutionHandle
 
     }
 
+
+
     @Override
     public Receive createReceive() {
         return receiveBuilder()
@@ -81,7 +95,7 @@ public class QAExecutionHandler extends AbstractActor implements ExecutionHandle
                             if(votes.size() == peers.size()){
                                 double qor = votes.stream().mapToInt(QualityAssuranceDTO.ImmutableQualityAssuranceDTO::getScore).sum();
                                 PigletTaskResult pigletTaskResult = new PigletTaskResult();
-                                pigletTaskResult.setResults(Collections.singletonList(String.valueOf(qor / votes.size())));
+                                pigletTaskResult.setResults(ImmutableList.of(String.valueOf(qor / votes.size())));
                                 parent.tell(pigletTaskResult, getSelf());
                             }
                         })

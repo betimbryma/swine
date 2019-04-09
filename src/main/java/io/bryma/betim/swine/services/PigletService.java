@@ -1,6 +1,7 @@
 package io.bryma.betim.swine.services;
 
 import akka.actor.ActorSystem;
+import io.bryma.betim.swine.exceptions.PigletNotFoundException;
 import io.bryma.betim.swine.model.Peer;
 import io.bryma.betim.swine.model.Piglet;
 import io.bryma.betim.swine.repositories.PigletRepository;
@@ -12,12 +13,10 @@ import java.util.List;
 public class PigletService {
 
     private PigletRepository pigletRepository;
-    private ExecutionService executionService;
     private ActorSystem actorSystem;
 
-    public PigletService(PigletRepository pigletRepository, ExecutionService executionService, ActorSystem actorSystem) {
+    public PigletService(PigletRepository pigletRepository, ActorSystem actorSystem) {
         this.pigletRepository = pigletRepository;
-        this.executionService = executionService;
         this.actorSystem = actorSystem;
     }
 
@@ -25,11 +24,13 @@ public class PigletService {
         return pigletRepository.save(piglet);
    }
 
-   public Piglet getPiglet(Piglet piglet){
-        return pigletRepository.findById(piglet.getId()).get(); //todo update this
+   public Piglet getPiglet(Long piglet) throws PigletNotFoundException {
+        return pigletRepository.findById(piglet).orElseThrow(
+                () -> new PigletNotFoundException("Piglet not found")
+        );
    }
 
-   public List<Piglet> getPiglets(Peer peer){
+   public List<Piglet> getPiglets(String peer){
         return pigletRepository.findByOwner(peer);
    }
 }

@@ -1,74 +1,49 @@
 package io.bryma.betim.swine.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.HashSet;
-import java.util.Set;
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
-@Document(collection = "negotiations")
+@Entity
 public class Negotiation {
 
     @Id
-    private String id;
-    private String type;
-    private String request;
-    @DBRef
-    private Set<Peer> negotiables = new HashSet<>();
-    @DBRef
-    private Set<Peer> agreed = new HashSet<>();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "negotiation")
+    private List<Negotiable> negotiables = new ArrayList<>();
     private boolean done;
     private String actorPath;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "execution_negotiation", nullable = false, updatable = false) //TODO
+    private Execution execution_negotiation;
 
-    public Negotiation(String type, String request, Set<Peer> negotiables, String actorPath) {
-        this.type = type;
-        this.request = request;
-        this.negotiables = negotiables;
+    public Negotiation(Execution execution_negotiation, String actorPath) {
+        this.execution_negotiation = execution_negotiation;
         this.actorPath = actorPath;
     }
 
     public Negotiation() {
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getRequest() {
-        return request;
-    }
-
-    public void setRequest(String request) {
-        this.request = request;
-    }
-
-    public Set<Peer> getNegotiables() {
+    public List<Negotiable> getNegotiables() {
         return negotiables;
     }
 
-    public void setNegotiables(Set<Peer> negotiables) {
+    public void setNegotiables(List<Negotiable> negotiables) {
         this.negotiables = negotiables;
-    }
-
-    public Set<Peer> getAgreed() {
-        return agreed;
-    }
-
-    public void setAgreed(Set<Peer> agreed) {
-        this.agreed = agreed;
     }
 
     public boolean isDone() {
@@ -85,5 +60,13 @@ public class Negotiation {
 
     public void setActorPath(String actorPath) {
         this.actorPath = actorPath;
+    }
+
+    public Execution getExecution_negotiation() {
+        return execution_negotiation;
+    }
+
+    public void setExecution_negotiation(Execution execution_negotiation) {
+        this.execution_negotiation = execution_negotiation;
     }
 }

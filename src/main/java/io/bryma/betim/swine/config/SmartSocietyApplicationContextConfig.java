@@ -18,21 +18,23 @@ public class SmartSocietyApplicationContextConfig {
     @Autowired
     private PaymentService paymentService;
     @Autowired
-    private MongoDatabase mongoDatabase;
+    private LocalSmartCom.Factory smartcomFactory;
+
 
     @Bean
-    public SmartSocietyApplicationContext getSmartSocietyApplicationContext() {
+    public SmartSocietyApplicationContext getSmartSocietyApplicationContext() throws IOException {
 
         CollectiveKindRegistry kindRegistry = CollectiveKindRegistry
                 .builder().register(CollectiveKind.EMPTY).build();
 
+        MongoRunner runner = MongoRunner.withPort(6666);
 
         PeerManagerMongoProxy.Factory pmFactory
-                = PeerManagerMongoProxy.factory(mongoDatabase);
+                = PeerManagerMongoProxy.factory(runner.getMongoDb());
 
         return new SmartSocietyApplicationContext(kindRegistry,
                 pmFactory,
-                new SmartComServiceRestImpl.Factory(), paymentService);
+                smartcomFactory, paymentService);
     }
 
 }

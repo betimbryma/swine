@@ -1,53 +1,68 @@
 package io.bryma.betim.swine.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import eu.smartsocietyproject.pf.Member;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.bryma.betim.swine.config.PigletState;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
-import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-@Document(collection = "executions")
+@Entity
 public class Execution {
 
     @Id
-    private String id;
-    private List<String> results = new ArrayList<>();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String collectiveId;
-    @DBRef
-    private Set<Member> executors = new HashSet<>();
     @JsonFormat(pattern = "yyyy-mm-dd")
     private LocalDateTime startDate;
     @JsonFormat(pattern = "yyyy-mm-dd")
     private LocalDateTime endDate;
     private String type;
+    @NotNull(message = "The request cannot be null")
+    @NotEmpty(message = "The request cannot be empty")
     private String request;
     private PigletState state = PigletState.SCHEDULED;
-    private String ownerId;
-    private String pigletId;
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "piglet", nullable = false, updatable = false)
+    private Piglet piglet;
     private String actorPath;
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "execution")
+    private List<TaskResult> taskResults = new ArrayList<>();
+    @NotNull(message = "CBT needs to have an owner")
+    private String peer;
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "execution_negotiation")
+    private List<Negotiation> negotiations = new ArrayList<>();
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "execution_qa")
+    private List<QualityAssurance> qualityAssurances = new ArrayList<>();
 
     public Execution() {
     }
 
-    public Execution(LocalDateTime startDate, LocalDateTime endDate,
-                     String type, String request, String ownerId, String pigletId) {
+    public Execution(LocalDateTime startDate, LocalDateTime endDate, String type,
+                     @NotNull(message = "The request cannot be null")
+                     @NotEmpty(message = "The request cannot be empty") String request, Piglet piglet, String peer) {
         this.startDate = startDate;
         this.endDate = endDate;
         this.type = type;
         this.request = request;
-        this.pigletId = pigletId;
-        this.ownerId = ownerId;
+        this.piglet = piglet;
+        this.peer = peer;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -57,14 +72,6 @@ public class Execution {
 
     public void setCollectiveId(String collectiveId) {
         this.collectiveId = collectiveId;
-    }
-
-    public Set<Member> getExecutors() {
-        return executors;
-    }
-
-    public void setExecutors(Set<Member> executors) {
-        this.executors = executors;
     }
 
     public LocalDateTime getStartDate() {
@@ -91,6 +98,14 @@ public class Execution {
         this.type = type;
     }
 
+    public String getRequest() {
+        return request;
+    }
+
+    public void setRequest(String request) {
+        this.request = request;
+    }
+
     public PigletState getState() {
         return state;
     }
@@ -99,20 +114,12 @@ public class Execution {
         this.state = state;
     }
 
-    public String getOwnerId() {
-        return ownerId;
+    public Piglet getPiglet() {
+        return piglet;
     }
 
-    public void setOwnerId(String ownerId) {
-        this.ownerId = ownerId;
-    }
-
-    public String getPigletId() {
-        return pigletId;
-    }
-
-    public void setPigletId(String pigletId) {
-        this.pigletId = pigletId;
+    public void setPiglet(Piglet piglet) {
+        this.piglet = piglet;
     }
 
     public String getActorPath() {
@@ -123,19 +130,35 @@ public class Execution {
         this.actorPath = actorPath;
     }
 
-    public String getRequest() {
-        return request;
+    public List<TaskResult> getTaskResults() {
+        return taskResults;
     }
 
-    public void setRequest(String request) {
-        this.request = request;
+    public void setTaskResults(List<TaskResult> taskResults) {
+        this.taskResults = taskResults;
     }
 
-    public List<String> getResults() {
-        return results;
+    public String getPeer() {
+        return peer;
     }
 
-    public void setResults(List<String> results) {
-        this.results = results;
+    public void setPeer(String peer) {
+        this.peer = peer;
+    }
+
+    public List<Negotiation> getNegotiations() {
+        return negotiations;
+    }
+
+    public void setNegotiations(List<Negotiation> negotiations) {
+        this.negotiations = negotiations;
+    }
+
+    public List<QualityAssurance> getQualityAssurances() {
+        return qualityAssurances;
+    }
+
+    public void setQualityAssurances(List<QualityAssurance> qualityAssurances) {
+        this.qualityAssurances = qualityAssurances;
     }
 }

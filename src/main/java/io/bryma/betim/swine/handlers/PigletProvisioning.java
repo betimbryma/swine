@@ -37,7 +37,7 @@ public class PigletProvisioning extends AbstractActorWithTimers implements Provi
     }
 
     @Override
-    public void provision(ApplicationContext context, TaskRequest t, Optional<Collective> inputCollective) throws CBTLifecycleException {
+    public void provision(ApplicationContext context, TaskRequest t, Optional<Collective> inputCollective) {
         if(duration != null && duration.getSeconds() >= 1)
             getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
         try {
@@ -45,13 +45,13 @@ public class PigletProvisioning extends AbstractActorWithTimers implements Provi
             ApplicationBasedCollective applicationBasedCollective = collective.toApplicationBasedCollective();
             context.getPeerManager().persistCollective(applicationBasedCollective);
             parent.tell(applicationBasedCollective, getSelf());
-        } catch (PeerManagerException e) {
+        } catch (CBTLifecycleException | PeerManagerException e) {
             parent.tell(State.PROV_FAIL, getSelf());
         }
 
     }
 
-    private void provision(Collective inputCollective) throws CBTLifecycleException {
+    private void provision(Collective inputCollective) {
         provision(applicationContext, taskRequest, Optional.ofNullable(inputCollective));
     }
 

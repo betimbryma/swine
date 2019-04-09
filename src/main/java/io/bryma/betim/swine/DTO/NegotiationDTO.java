@@ -5,31 +5,50 @@ import io.bryma.betim.swine.config.Vote;
 
 public class NegotiationDTO {
 
-    private String negotiationID;
-    private TaskRequest taskRequest;
-    private Vote vote;
+    private Long negotiationID;
+    private String taskRequest;
+    private boolean agreed;
+    private boolean done;
 
-    public TaskRequest getTaskRequest() {
+    public NegotiationDTO() {
+    }
+
+    public NegotiationDTO(Long negotiationID, String taskRequest, boolean agreed, boolean done) {
+        this.negotiationID = negotiationID;
+        this.taskRequest = taskRequest;
+        this.agreed = agreed;
+        this.done = done;
+    }
+
+    public String getTaskRequest() {
         return taskRequest;
     }
 
-    public void setTaskRequest(TaskRequest taskRequest) {
+    public void setTaskRequest(String taskRequest) {
         this.taskRequest = taskRequest;
     }
 
-    public Vote getVote() {
-        return vote;
+    public boolean isAgreed() {
+        return agreed;
     }
 
-    public void setVote(Vote vote) {
-        this.vote = vote;
+    public void setAgreed(boolean agreed) {
+        this.agreed = agreed;
     }
 
-    public String getNegotiationID() {
+    public Long getNegotiationID() {
         return negotiationID;
     }
 
-    public void setNegotiationID(String negotiationID) {
+    public void setNegotiationID(Long negotiationID) {
         this.negotiationID = negotiationID;
+    }
+
+    public boolean isDone() {
+        return done;
+    }
+
+    public void setDone(boolean done) {
+        this.done = done;
     }
 }

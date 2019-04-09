@@ -43,6 +43,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and().authorizeRequests().antMatchers("/api/peers/**")
                 .permitAll().anyRequest().authenticated().and().addFilterBefore(swineFilter, UsernamePasswordAuthenticationFilter.class);
+
     }
+
 
 }

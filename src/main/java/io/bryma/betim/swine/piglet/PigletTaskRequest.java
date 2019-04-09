@@ -7,13 +7,16 @@ import java.util.UUID;
 
 public class PigletTaskRequest extends TaskRequest {
 
-    public PigletTaskRequest(TaskDefinition definition, String type) {
+    private String request;
+
+    public PigletTaskRequest(TaskDefinition definition, String type, String request) {
         super(definition, type);
+        this.request = request;
     }
 
     @Override
     public String getRequest() {
-        return getDefinition().toString();
+        return this.request;
     }
 
     @Override

@@ -1,54 +1,51 @@
 package io.bryma.betim.swine.model;
 
-import io.bryma.betim.swine.DTO.QualityAssuranceDTO;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.HashSet;
-import java.util.Set;
 
-@Document(collection = "qualityAssurance")
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
+@Entity
 public class QualityAssurance {
 
     @Id
-    private String id;
-    private String taskRequest;
-    private Set<QualityAssuranceDTO> qualityAssuranceVoters = new HashSet<>();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "qualityAssurance")
+    private List<QualityAssuranceInstance> qualityAssuranceInstances;
     private boolean done;
     private String actorPath;
-
-    public QualityAssurance(String taskRequest,
-                            Set<QualityAssuranceDTO> qualityAssuranceVoters, String actorPath) {
-        this.taskRequest = taskRequest;
-        this.qualityAssuranceVoters = qualityAssuranceVoters;
-        this.actorPath = actorPath;
-    }
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "execution_qa", nullable = false, updatable = false)
+    private Execution execution_qa;
 
     public QualityAssurance() {
     }
 
-    public String getId() {
+    public QualityAssurance(Execution execution_qa, String actorPath) {
+        this.actorPath = actorPath;
+        this.execution_qa = execution_qa;
+    }
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getTaskRequest() {
-        return taskRequest;
+    public List<QualityAssuranceInstance> getQualityAssuranceInstances() {
+        return qualityAssuranceInstances;
     }
 
-    public void setTaskRequest(String taskRequest) {
-        this.taskRequest = taskRequest;
-    }
-
-    public Set<QualityAssuranceDTO> getQualityAssuranceVoters() {
-        return qualityAssuranceVoters;
-    }
-
-    public void setQualityAssuranceVoters(Set<QualityAssuranceDTO> qualityAssuranceVoters) {
-        this.qualityAssuranceVoters = qualityAssuranceVoters;
+    public void setQualityAssuranceInstances(List<QualityAssuranceInstance> qualityAssuranceInstances) {
+        this.qualityAssuranceInstances = qualityAssuranceInstances;
     }
 
     public boolean isDone() {
@@ -65,5 +62,13 @@ public class QualityAssurance {
 
     public void setActorPath(String actorPath) {
         this.actorPath = actorPath;
+    }
+
+    public Execution getExecution_qa() {
+        return execution_qa;
+    }
+
+    public void setExecution_qa(Execution execution_qa) {
+        this.execution_qa = execution_qa;
     }
 }

@@ -23,3 +23,8 @@
 /nbdist/
 /.nb-gradle/
 /build/
+
+**/resources/Peers.json
+**/resources/application.properties
+
+

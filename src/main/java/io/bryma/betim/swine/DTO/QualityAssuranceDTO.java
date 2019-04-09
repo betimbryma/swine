@@ -1,35 +1,42 @@
 package io.bryma.betim.swine.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.bryma.betim.swine.model.Peer;
+import io.bryma.betim.swine.model.QualityAssuranceInstance;
+
+import java.util.List;
 
 public class QualityAssuranceDTO {
 
-    private String qualityAssuranceId;
-    private Peer peer;
+    private Long qualityAssuranceId;
+    private String taskRequest;
     private boolean voted;
     private int score;
+    private List<String> results;
 
-    public QualityAssuranceDTO(Peer peer) {
-        this.peer = peer;
+    public QualityAssuranceDTO(Long qualityAssuranceId, String taskRequest, List<String> results) {
+        this.qualityAssuranceId = qualityAssuranceId;
+        this.taskRequest = taskRequest;
+        this.results = results;
     }
 
     public QualityAssuranceDTO() {
     }
 
-    public String getQualityAssuranceId() {
+    public Long getQualityAssuranceId() {
         return qualityAssuranceId;
     }
 
-    public void setQualityAssuranceId(String qualityAssuranceId) {
+    public void setQualityAssuranceId(Long qualityAssuranceId) {
         this.qualityAssuranceId = qualityAssuranceId;
     }
 
-    public Peer getPeer() {
-        return peer;
+    public String getTaskRequest() {
+        return taskRequest;
     }
 
-    public void setPeer(Peer peer) {
-        this.peer = peer;
+    public void setTaskRequest(String taskRequest) {
+        this.taskRequest = taskRequest;
     }
 
     public boolean isVoted() {
@@ -48,30 +55,30 @@ public class QualityAssuranceDTO {
         this.score = score;
     }
 
-    public static ImmutableQualityAssuranceDTO of(QualityAssuranceDTO qualityAssuranceDTO){
-        return new ImmutableQualityAssuranceDTO(qualityAssuranceDTO.getQualityAssuranceId(),
-                qualityAssuranceDTO.getPeer(), qualityAssuranceDTO.isVoted(), qualityAssuranceDTO.getScore());
+    public static ImmutableQualityAssuranceDTO of(QualityAssuranceInstance qa){
+        return new ImmutableQualityAssuranceDTO(qa.getQualityAssurance().getId(),
+                qa.getPeer(), qa.isDone(), qa.getVote());
     }
 
     public static class ImmutableQualityAssuranceDTO {
 
-        private String qualityAssuranceId;
-        private Peer peer;
+        private Long qualityAssuranceId;
+        private String peer;
         private boolean voted;
         private int score;
 
-        private ImmutableQualityAssuranceDTO(String qualityAssuranceId, Peer peer, boolean voted, int score) {
+        private ImmutableQualityAssuranceDTO(Long qualityAssuranceId, String peer, boolean voted, int score) {
             this.qualityAssuranceId = qualityAssuranceId;
             this.peer = peer;
             this.voted = voted;
             this.score = score;
         }
 
-        public String getQualityAssuranceId() {
+        public Long getQualityAssuranceId() {
             return qualityAssuranceId;
         }
 
-        public Peer getPeer() {
+        public String getPeer() {
             return peer;
         }
 

@@ -44,12 +44,7 @@ public class PeerService implements UserDetailsService {
     public void save(io.bryma.betim.swine.model.Peer peer) throws JsonProcessingException {
         peerManager.persistPeer(PeerIntermediary
                 .builder(peer.getId(), peer.getRole(), peer.getAddress())
-                .addDeliveryAddress(AttributeType.from(ObjectMapperSingelton.getObjectMapper()
-                        .writerWithDefaultPrettyPrinter().writeValueAsString(new PeerChannelAddress(
-                                Identifier.peer(peer.getId()),
-                                Identifier.channelType("email"),
-                                Collections.singletonList(peer.getEmail()))
-                        )
+                .addDeliveryAddress(AttributeType.from( peer.getEmail()
                 ))
                 .addAttribute("system", AttributeType.from("swine"))
                 .addAttribute("email", AttributeType.from(peer.getEmail()))
@@ -57,5 +52,9 @@ public class PeerService implements UserDetailsService {
                 .addAttribute("location", AttributeType.from(peer.getLocation()))
                 .addAttribute("password", AttributeType.from(bCryptPasswordEncoder.encode(peer.getPassword())))
                 .build());
+    }
+
+    public PeerIntermediary getPeer(String peer) throws PeerManagerException {
+        return peerManager.readPeerById(peer);
     }
 }

@@ -8,9 +8,11 @@ import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.peermanager.query.PeerQuery;
 import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.enummerations.State;
+import io.bryma.betim.swine.config.LocalSmartCom;
 import io.bryma.betim.swine.handlers.*;
 import io.bryma.betim.swine.services.ExecutionService;
 import io.bryma.betim.swine.services.NegotiationService;
+import io.bryma.betim.swine.services.PigletService;
 import io.bryma.betim.swine.services.QualityAssuranceService;
 
 import java.time.Duration;
@@ -19,14 +21,16 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
 
     private final PigletTaskRequest pigletTaskRequest;
     private final SmartSocietyApplicationContext smartSocietyApplicationContext;
+    private final LocalSmartCom.Factory smartcomFactory;
     private final PeerQuery peerQuery;
     private final NegotiationService negotiationService;
     private final ExecutionService executionService;
+    private final PigletService pigletService;
     private final QualityAssuranceService qualityAssuranceService;
     private ActorRef parent;
     private final String START_TICK = "START_TICK";
     private final String END_TICK = "END_TICK";
-    private final String executionId;
+    private final Long executionId;
     private boolean openCall;
     private Duration provisionDuration;
     private Duration compositionDuration;
@@ -34,17 +38,16 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
     private Duration executionDuration;
     private Duration qualityAssuranceDuration;
     private ICollectiveBasedTaskContract collectiveBasedTaskContract;
-    private String id;
 
     private static final class PigletTick{}
 
-    public static Props props(String id, PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext,
+    public static Props props(PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext, LocalSmartCom.Factory smartcomFactory,
                               PeerQuery peerQuery, NegotiationService negotiationService, ExecutionService executionService,
-                              QualityAssuranceService qualityAssuranceService, ICollectiveBasedTaskContract collectiveBasedTaskContract,
-                              Duration start, Duration end, String executionId, boolean openCall, Duration provision,
+                              QualityAssuranceService qualityAssuranceService, PigletService pigletService, ICollectiveBasedTaskContract collectiveBasedTaskContract,
+                              Duration start, Duration end, Long executionId, boolean openCall, Duration provision,
                               Duration composition, Duration negotiation, Duration execution, Duration qualityAssurance){
-        return Props.create(PigletTaskRunner.class, () -> new PigletTaskRunner(id, pigletTaskRequest, smartSocietyApplicationContext,
-                peerQuery, negotiationService, executionService, qualityAssuranceService, collectiveBasedTaskContract, start, end, executionId, openCall, provision, composition,
+        return Props.create(PigletTaskRunner.class, () -> new PigletTaskRunner(pigletTaskRequest, smartSocietyApplicationContext, smartcomFactory,
+                peerQuery, negotiationService, executionService, qualityAssuranceService, pigletService, collectiveBasedTaskContract, start, end, executionId, openCall, provision, composition,
                 negotiation, execution, qualityAssurance));
     }
 
@@ -54,13 +57,12 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
         this.parent = getContext().getParent();
     }
 
-    private PigletTaskRunner(String id, PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext,
+    private PigletTaskRunner(PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext, LocalSmartCom.Factory smartcomFactory,
                              PeerQuery peerQuery, NegotiationService negotiationService, ExecutionService executionService,
-                             QualityAssuranceService qualityAssuranceService, ICollectiveBasedTaskContract collectiveBasedTaskContract, Duration start, Duration end, String executionId, boolean openCall, Duration provision,
+                             QualityAssuranceService qualityAssuranceService, PigletService pigletService, ICollectiveBasedTaskContract collectiveBasedTaskContract, Duration start, Duration end, Long executionId, boolean openCall, Duration provision,
                              Duration composition, Duration negotiation, Duration execution, Duration qualityAssurance) {
 
         getTimers().startSingleTimer(END_TICK, PoisonPill.getInstance(), end);
-        this.id = id;
         this.pigletTaskRequest = pigletTaskRequest;
         this.smartSocietyApplicationContext = smartSocietyApplicationContext;
         this.peerQuery = peerQuery;
@@ -74,6 +76,8 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
         this.negotiationDuration = negotiation;
         this.executionDuration = execution;
         this.qualityAssuranceDuration = qualityAssurance;
+        this.pigletService = pigletService;
+        this.smartcomFactory = smartcomFactory;
         if(start != null && start.toMinutes() > 1)
             getTimers().startSingleTimer(START_TICK, new PigletTick(), start);
         else
@@ -94,13 +98,13 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
                     pigletTaskRequest, compositionDuration);
 
             Props negotiationProps = PigletNegotiation.props(smartSocietyApplicationContext,
-                    pigletTaskRequest, negotiationService, negotiationDuration);
+                    executionId, negotiationService, negotiationDuration);
 
             Props executionProps = PigletExecution.props(smartSocietyApplicationContext,
                     executionService, executionId, executionDuration);
 
-            Props qualityAssuranceProps = PigletQualityAssurance.props(smartSocietyApplicationContext,
-                    qualityAssuranceService, negotiationService, executionService, pigletTaskRequest, qualityAssuranceDuration);
+            Props qualityAssuranceProps = PigletQualityAssurance.props(smartSocietyApplicationContext, smartcomFactory,
+                    qualityAssuranceService, negotiationService, executionService, pigletService, pigletTaskRequest, qualityAssuranceDuration);
 
             TaskFlowDefinition taskFlowDefinition
                     = this.openCall ? TaskFlowDefinition.onDemandWithOpenCall(
