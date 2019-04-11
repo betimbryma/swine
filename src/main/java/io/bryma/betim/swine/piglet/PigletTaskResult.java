@@ -22,7 +22,7 @@ public class PigletTaskResult extends TaskResult {
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        results.stream().forEach(result -> {stringBuilder.append(result).append("\n");});
+        results.stream().forEach(result -> {stringBuilder.append(result).append("\n\n");});
 
         return stringBuilder.toString();
     }

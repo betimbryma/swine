@@ -7,11 +7,13 @@ import at.ac.tuwien.dsg.smartcom.exception.CommunicationException;
 import at.ac.tuwien.dsg.smartcom.model.Identifier;
 import at.ac.tuwien.dsg.smartcom.model.Message;
 import com.google.common.collect.ImmutableList;
+import eu.smartsocietyproject.DTO.QualityAssuranceHandlerDTO;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.ExecutionHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
+import io.bryma.betim.swine.DTO.MemberDTO;
 import io.bryma.betim.swine.DTO.QualityAssuranceDTO;
 import io.bryma.betim.swine.exceptions.QualityAssuranceException;
 import io.bryma.betim.swine.piglet.PigletTaskResult;
@@ -26,7 +28,7 @@ public class QAExecutionHandler extends AbstractActor implements ExecutionHandle
     private final ApplicationContext context;
     private final QualityAssuranceService qualityAssuranceService;
     private Set<Member> peers = new HashSet<>();
-    private Set<QualityAssuranceDTO.ImmutableQualityAssuranceDTO> votes = new HashSet<>();
+    private Set<MemberDTO> votes = new HashSet<>();
     private TaskResult taskResult;
     private final Long executionId;
 
@@ -89,14 +91,15 @@ public class QAExecutionHandler extends AbstractActor implements ExecutionHandle
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(QualityAssuranceDTO.ImmutableQualityAssuranceDTO.class,
+                .match(MemberDTO.class,
                         dto -> {
                             votes.add(dto);
                             if(votes.size() == peers.size()){
-                                double qor = votes.stream().mapToInt(QualityAssuranceDTO.ImmutableQualityAssuranceDTO::getScore).sum();
+                                double qor = votes.stream().mapToInt(MemberDTO::getVote).sum();
                                 PigletTaskResult pigletTaskResult = new PigletTaskResult();
-                                pigletTaskResult.setResults(ImmutableList.of(String.valueOf(qor / votes.size())));
-                                parent.tell(pigletTaskResult, getSelf());
+                                pigletTaskResult.setResults(ImmutableList.of(String.valueOf(qor / (votes.size() * 10))));
+                                QualityAssuranceHandlerDTO qualityAssuranceHandlerDTO = new QualityAssuranceHandlerDTO(pigletTaskResult);
+                                parent.tell(qualityAssuranceHandlerDTO, getSelf());
                             }
                         })
                 .match(CollectiveWithPlan.class,

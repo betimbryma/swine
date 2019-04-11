@@ -1,5 +1,6 @@
 package io.bryma.betim.swine.controllers;
 
+import io.bryma.betim.swine.DTO.PigletDTO;
 import io.bryma.betim.swine.exceptions.PigletNotFoundException;
 import io.bryma.betim.swine.model.Execution;
 import io.bryma.betim.swine.model.Peer;
@@ -37,13 +38,27 @@ public class PigletController {
     }
 
     @GetMapping("/cbt/{id}")
-    public ResponseEntity<?> getCbts(@PathVariable Long id){
+    public ResponseEntity<?> getCbts(@PathVariable Long id, Principal principal){
         try {
-            Piglet piglet = pigletService.getPiglet(id);
+
+            Piglet piglet = pigletService.getPiglet(id, principal.getName());
+
+
             List<Execution> cbts = executionService.getExecutions(piglet);
-            return ResponseEntity.ok(cbts);
+
+            return ResponseEntity.ok(new PigletDTO(piglet, cbts));
         } catch (PigletNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getPiglet(@PathVariable Long id, Principal principal){
+        try {
+            Piglet piglet = pigletService.getPiglet(id, principal.getName());
+            return ResponseEntity.ok(piglet);
+        } catch (PigletNotFoundException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

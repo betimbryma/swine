@@ -3,13 +3,18 @@ package io.bryma.betim.swine.piglet;
 import akka.actor.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableList;
+import eu.smartsocietyproject.DTO.ResultDTO;
 import eu.smartsocietyproject.payment.smartcontracts.ICollectiveBasedTaskContract;
 import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.peermanager.query.PeerQuery;
 import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.config.LocalSmartCom;
+import io.bryma.betim.swine.config.PigletState;
+import io.bryma.betim.swine.exceptions.PigletNotFoundException;
 import io.bryma.betim.swine.handlers.*;
+import io.bryma.betim.swine.model.Execution;
+import io.bryma.betim.swine.model.Piglet;
 import io.bryma.betim.swine.services.ExecutionService;
 import io.bryma.betim.swine.services.NegotiationService;
 import io.bryma.betim.swine.services.PigletService;
@@ -23,10 +28,12 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
     private final SmartSocietyApplicationContext smartSocietyApplicationContext;
     private final LocalSmartCom.Factory smartcomFactory;
     private final PeerQuery peerQuery;
+    private final PeerQuery qaPeerQuery;
     private final NegotiationService negotiationService;
     private final ExecutionService executionService;
     private final PigletService pigletService;
     private final QualityAssuranceService qualityAssuranceService;
+    private final double qor;
     private ActorRef parent;
     private final String START_TICK = "START_TICK";
     private final String END_TICK = "END_TICK";
@@ -42,13 +49,13 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
     private static final class PigletTick{}
 
     public static Props props(PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext, LocalSmartCom.Factory smartcomFactory,
-                              PeerQuery peerQuery, NegotiationService negotiationService, ExecutionService executionService,
+                              PeerQuery peerQuery, PeerQuery qaPeerQuery, NegotiationService negotiationService, ExecutionService executionService,
                               QualityAssuranceService qualityAssuranceService, PigletService pigletService, ICollectiveBasedTaskContract collectiveBasedTaskContract,
                               Duration start, Duration end, Long executionId, boolean openCall, Duration provision,
-                              Duration composition, Duration negotiation, Duration execution, Duration qualityAssurance){
+                              Duration composition, Duration negotiation, Duration execution, Duration qualityAssurance, double qor){
         return Props.create(PigletTaskRunner.class, () -> new PigletTaskRunner(pigletTaskRequest, smartSocietyApplicationContext, smartcomFactory,
-                peerQuery, negotiationService, executionService, qualityAssuranceService, pigletService, collectiveBasedTaskContract, start, end, executionId, openCall, provision, composition,
-                negotiation, execution, qualityAssurance));
+                peerQuery, qaPeerQuery, negotiationService, executionService, qualityAssuranceService, pigletService, collectiveBasedTaskContract,
+                start, end, executionId, openCall, provision, composition, negotiation, execution, qualityAssurance, qor));
     }
 
     @Override
@@ -58,11 +65,11 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
     }
 
     private PigletTaskRunner(PigletTaskRequest pigletTaskRequest, SmartSocietyApplicationContext smartSocietyApplicationContext, LocalSmartCom.Factory smartcomFactory,
-                             PeerQuery peerQuery, NegotiationService negotiationService, ExecutionService executionService,
+                             PeerQuery peerQuery, PeerQuery qaPeerQuery, NegotiationService negotiationService, ExecutionService executionService,
                              QualityAssuranceService qualityAssuranceService, PigletService pigletService, ICollectiveBasedTaskContract collectiveBasedTaskContract, Duration start, Duration end, Long executionId, boolean openCall, Duration provision,
-                             Duration composition, Duration negotiation, Duration execution, Duration qualityAssurance) {
-
-        getTimers().startSingleTimer(END_TICK, PoisonPill.getInstance(), end);
+                             Duration composition, Duration negotiation, Duration execution, Duration qualityAssurance, double qor) {
+        if(end != null && end.toMinutes() > 0)
+            getTimers().startSingleTimer(END_TICK, PoisonPill.getInstance(), end);
         this.pigletTaskRequest = pigletTaskRequest;
         this.smartSocietyApplicationContext = smartSocietyApplicationContext;
         this.peerQuery = peerQuery;
@@ -77,8 +84,10 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
         this.executionDuration = execution;
         this.qualityAssuranceDuration = qualityAssurance;
         this.pigletService = pigletService;
+        this.qaPeerQuery = qaPeerQuery;
         this.smartcomFactory = smartcomFactory;
-        if(start != null && start.toMinutes() > 1)
+        this.qor = qor;
+        if(start != null && start.toMinutes() > 0)
             getTimers().startSingleTimer(START_TICK, new PigletTick(), start);
         else
             start();
@@ -104,7 +113,8 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
                     executionService, executionId, executionDuration);
 
             Props qualityAssuranceProps = PigletQualityAssurance.props(smartSocietyApplicationContext, smartcomFactory,
-                    qualityAssuranceService, negotiationService, executionService, pigletService, pigletTaskRequest, qualityAssuranceDuration);
+                    qualityAssuranceService, negotiationService, executionService, pigletService, pigletTaskRequest,
+                    qualityAssuranceDuration, qaPeerQuery, qor);
 
             TaskFlowDefinition taskFlowDefinition
                     = this.openCall ? TaskFlowDefinition.onDemandWithOpenCall(
@@ -131,7 +141,37 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
         return receiveBuilder()
                 .match(PigletTick.class,
                         p -> start())
-                //.match(ResultDTO.class, )
+                .match(State.class, state -> {
+                    switch (state){
+                        case PROVISIONING:
+                            updateState(PigletState.PROVISIONING);
+                            break;
+                        case NEGOTIATION:
+                            updateState(PigletState.NEGOTIATING);
+                            break;
+                        case COMPOSITION:
+                            updateState(PigletState.COMPOSITION);
+                            break;
+                        case EXECUTION:
+                            updateState(PigletState.EXECUTION);
+                            break;
+                        case QUALITY_ASSURANCE:
+                            updateState(PigletState.QUALITY_ASSURANCE);
+                            break;
+                        case PROV_FAIL:
+                        case COMP_FAIL:
+                        case NEG_FAIL:
+                        case EXEC_FAIL:
+                        case QUALITY_ASSURANCE_FAIL:
+                            updateState(PigletState.FAILED);
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                .match(ResultDTO.class, resultDTO -> {
+                  updateState(resultDTO.getQor() >= this.qor ? PigletState.FINISHED : PigletState.FAILED);
+                })
                 .build();
     }
 
@@ -140,5 +180,13 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
         return this.pigletTaskRequest.getDefinition().getJson();
     }
 
-
+    private void updateState(PigletState state){
+        try {
+            Execution execution = executionService.getExecution(this.executionId);
+            execution.setState(state);
+            executionService.saveExecution(execution);
+        } catch (PigletNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 }

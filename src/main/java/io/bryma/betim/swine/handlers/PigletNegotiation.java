@@ -12,6 +12,7 @@ import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.NegotiationHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
+import io.bryma.betim.swine.DTO.Death;
 import io.bryma.betim.swine.DTO.MemberDTO;
 import io.bryma.betim.swine.exceptions.NegotiationException;
 import io.bryma.betim.swine.services.NegotiationService;
@@ -61,7 +62,7 @@ public class PigletNegotiation extends AbstractActorWithTimers implements Negoti
     @Override
     public void negotiate(ApplicationContext context, ImmutableList<CollectiveWithPlan> negotiables) {
         if(duration != null && duration.getSeconds() >= 1)
-            getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
+            getTimers().startSingleTimer(TICK, new Death(), duration);
         try {
             CollectiveWithPlan collectiveWithPlan = negotiables.get(0);
             this.kind = collectiveWithPlan.getCollective().getKind();
@@ -70,7 +71,6 @@ public class PigletNegotiation extends AbstractActorWithTimers implements Negoti
                     .readCollectiveById(collectiveWithPlan.getCollective().getId());
 
             this.negotiators = residentCollective.getMembers();
-            this.negotiators = new HashSet<>();
             Long negotiationId;
             try {
                 negotiationId = negotiationService.createNegotiation(negotiators, executionID, getSelf().path());
@@ -88,7 +88,7 @@ public class PigletNegotiation extends AbstractActorWithTimers implements Negoti
             Message message = new Message.MessageBuilder()
                     .setType("Swine - Negotiation")
                     .setContent(stringBuilder)
-                    .setReceiverId(Identifier.collective("")) //TODO
+                    .setReceiverId(Identifier.collective(collectiveWithPlan.getCollective().getId()))
                     .create();
 
             context.getSmartCom().send(message);
@@ -132,7 +132,10 @@ public class PigletNegotiation extends AbstractActorWithTimers implements Negoti
                 .match(NegotiationHandlerDTO.class,
                         negotiationHandlerDTO -> negotiate(applicationContext, negotiationHandlerDTO.getCollectivesWithPlan()))
                 .match(MemberDTO.class, this::agreed)
-                .matchAny(o -> System.out.println(o.getClass()))
+                .match(Death.class,
+                        death -> {
+                    this.parent.tell(State.NEG_FAIL, getSelf());
+                })
                 .build();
     }
 }

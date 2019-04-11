@@ -14,10 +14,10 @@ public class QualityAssuranceDTO {
     private int score;
     private List<String> results;
 
-    public QualityAssuranceDTO(Long qualityAssuranceId, String taskRequest, List<String> results) {
+    public QualityAssuranceDTO(Long qualityAssuranceId, String taskRequest, boolean voted) {
         this.qualityAssuranceId = qualityAssuranceId;
         this.taskRequest = taskRequest;
-        this.results = results;
+        this.voted = voted;
     }
 
     public QualityAssuranceDTO() {
@@ -53,6 +53,14 @@ public class QualityAssuranceDTO {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public List<String> getResults() {
+        return results;
+    }
+
+    public void setResults(List<String> results) {
+        this.results = results;
     }
 
     public static ImmutableQualityAssuranceDTO of(QualityAssuranceInstance qa){

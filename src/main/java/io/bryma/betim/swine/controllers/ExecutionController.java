@@ -54,10 +54,20 @@ public class ExecutionController {
         try {
             executionService.execution(principal.getName(), executionDTO);
             return ResponseEntity.ok().build();
-        } catch (PigletNotFoundException | PeerException e) {
+        } catch (PigletNotFoundException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
 
+    }
+
+    @PutMapping("")
+    public ResponseEntity<?> cancelExecution(@RequestBody ExecutionDTO executionDTO, Principal principal){
+        try {
+            executionService.stopExecution(executionDTO, principal.getName());
+            return ResponseEntity.ok().build();
+        } catch (PigletNotFoundException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
 

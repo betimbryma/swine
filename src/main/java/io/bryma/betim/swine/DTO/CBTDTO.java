@@ -1,36 +1,35 @@
 package io.bryma.betim.swine.DTO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class CBTDTO {
 
-    private LocalDateTime startDate;
+    @JsonFormat(pattern="dd/MM/yyyy, HH:mm:ss a")
+    private long start;
     private boolean openCall;
     private String taskRequest;
     private String name;
-    private Integer provisionTimeout;
-    private Integer compositionTimeout;
-    private Integer negotiationTimeout;
-    private Integer executionTimeout;
-    private Integer qualityAssuranceTimeout;
-    private boolean qaCollective;
-    private String unit;
+    private long provisionTimeout;
+    private long compositionTimeout;
+    private long negotiationTimeout;
+    private long executionTimeout;
+    private long qualityAssuranceTimeout;
     private List<JsonNode> queries;
-    private String privateKey;
+    private List<JsonNode> qaQueries;
     private Double qor;
-    private Integer quantity;
     private Long pigletId;
-    private String smartContractAddress;
 
-    public LocalDateTime getStartDate() {
-        return startDate;
+    public long getStart() {
+        return start;
     }
 
-    public void setStartDate(LocalDateTime startDate) {
-        this.startDate = startDate;
+    public void setStart(long start) {
+        this.start = start;
     }
 
     public boolean isOpenCall() {
@@ -57,60 +56,44 @@ public class CBTDTO {
         this.name = name;
     }
 
-    public Integer getProvisionTimeout() {
+    public long getProvisionTimeout() {
         return provisionTimeout;
     }
 
-    public void setProvisionTimeout(Integer provisionTimeout) {
+    public void setProvisionTimeout(long provisionTimeout) {
         this.provisionTimeout = provisionTimeout;
     }
 
-    public Integer getCompositionTimeout() {
+    public long getCompositionTimeout() {
         return compositionTimeout;
     }
 
-    public void setCompositionTimeout(Integer compositionTimeout) {
+    public void setCompositionTimeout(long compositionTimeout) {
         this.compositionTimeout = compositionTimeout;
     }
 
-    public Integer getNegotiationTimeout() {
+    public long getNegotiationTimeout() {
         return negotiationTimeout;
     }
 
-    public void setNegotiationTimeout(Integer negotiationTimeout) {
+    public void setNegotiationTimeout(long negotiationTimeout) {
         this.negotiationTimeout = negotiationTimeout;
     }
 
-    public Integer getExecutionTimeout() {
+    public long getExecutionTimeout() {
         return executionTimeout;
     }
 
-    public void setExecutionTimeout(Integer executionTimeout) {
+    public void setExecutionTimeout(long executionTimeout) {
         this.executionTimeout = executionTimeout;
     }
 
-    public Integer getQualityAssuranceTimeout() {
+    public long getQualityAssuranceTimeout() {
         return qualityAssuranceTimeout;
     }
 
-    public void setQualityAssuranceTimeout(Integer qualityAssuranceTimeout) {
+    public void setQualityAssuranceTimeout(long qualityAssuranceTimeout) {
         this.qualityAssuranceTimeout = qualityAssuranceTimeout;
-    }
-
-    public boolean isQaCollective() {
-        return qaCollective;
-    }
-
-    public void setQaCollective(boolean qaCollective) {
-        this.qaCollective = qaCollective;
-    }
-
-    public String getUnit() {
-        return unit;
-    }
-
-    public void setUnit(String unit) {
-        this.unit = unit;
     }
 
     public List<JsonNode> getQueries() {
@@ -121,12 +104,12 @@ public class CBTDTO {
         this.queries = queries;
     }
 
-    public String getPrivateKey() {
-        return privateKey;
+    public List<JsonNode> getQaQueries() {
+        return qaQueries;
     }
 
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
+    public void setQaQueries(List<JsonNode> qaQueries) {
+        this.qaQueries = qaQueries;
     }
 
     public Double getQor() {
@@ -137,27 +120,11 @@ public class CBTDTO {
         this.qor = qor;
     }
 
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
     public Long getPigletId() {
         return pigletId;
     }
 
     public void setPigletId(Long pigletId) {
         this.pigletId = pigletId;
-    }
-
-    public String getSmartContractAddress() {
-        return smartContractAddress;
-    }
-
-    public void setSmartContractAddress(String smartContractAddress) {
-        this.smartContractAddress = smartContractAddress;
     }
 }

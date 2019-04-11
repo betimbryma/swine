@@ -70,16 +70,14 @@ public class NegotiationService {
                 peer).orElseThrow(
                 () -> new NegotiationException("Negotiation Instance not found."));
 
-        PeerIntermediary member = peerService.getPeer(peer);
-
         if(!savedNegotiable.isCompleted()){
             savedNegotiable.setAgreed(negotiable.isAgreed());
             savedNegotiable.setCompleted(true);
             negotiableRepository.save(savedNegotiable);
-
+            PeerIntermediary member = peerService.getPeer(peer);
             MemberDTO memberDTO = new MemberDTO(Member.of(peer, member.getRole(), member.getAddress()), negotiable.isAgreed());
 
-            notify(savedNegotiable.getNegotiation().getActorPath(), memberDTO);
+            notify(negotiation.getActorPath(), memberDTO);
         }
 
     }
@@ -123,7 +121,7 @@ public class NegotiationService {
     }
 
     public String getUrl() {
-        return swineUrl+"api/negotiation/";
+        return swineUrl+"negotiation/";
     }
 
 }

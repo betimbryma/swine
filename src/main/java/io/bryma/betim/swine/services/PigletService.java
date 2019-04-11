@@ -24,8 +24,9 @@ public class PigletService {
         return pigletRepository.save(piglet);
    }
 
-   public Piglet getPiglet(Long piglet) throws PigletNotFoundException {
-        return pigletRepository.findById(piglet).orElseThrow(
+   public Piglet getPiglet(Long piglet, String peer) throws PigletNotFoundException {
+        return pigletRepository.findById(piglet)
+                .filter(piglet1 -> piglet1.getOwner().equals(peer)).orElseThrow(
                 () -> new PigletNotFoundException("Piglet not found")
         );
    }

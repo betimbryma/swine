@@ -9,6 +9,7 @@ import eu.smartsocietyproject.pf.TaskRequest;
 import eu.smartsocietyproject.pf.cbthandlers.CBTLifecycleException;
 import eu.smartsocietyproject.pf.cbthandlers.ProvisioningHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
+import io.bryma.betim.swine.DTO.Death;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -39,7 +40,7 @@ public class PigletProvisioning extends AbstractActorWithTimers implements Provi
     @Override
     public void provision(ApplicationContext context, TaskRequest t, Optional<Collective> inputCollective) {
         if(duration != null && duration.getSeconds() >= 1)
-            getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
+            getTimers().startSingleTimer(TICK, new Death(), duration);
         try {
             Collective collective = inputCollective.orElseThrow(CBTLifecycleException::new);
             ApplicationBasedCollective applicationBasedCollective = collective.toApplicationBasedCollective();
@@ -60,7 +61,10 @@ public class PigletProvisioning extends AbstractActorWithTimers implements Provi
         return receiveBuilder()
                 .match(Collective.class,
                         this::provision)
-                .matchAny(o -> System.out.println(o.getClass()))
+                .match(Death.class,
+                death -> {
+                    this.parent.tell(State.PROV_FAIL, getSelf());
+                })
                 .build();
     }
 }

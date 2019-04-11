@@ -4,8 +4,11 @@ import akka.actor.ActorPath;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
+import eu.smartsocietyproject.peermanager.PeerManagerException;
 import eu.smartsocietyproject.pf.Member;
 import eu.smartsocietyproject.pf.TaskRequest;
+import eu.smartsocietyproject.pf.helper.PeerIntermediary;
+import io.bryma.betim.swine.DTO.MemberDTO;
 import io.bryma.betim.swine.DTO.QualityAssuranceDTO;
 import io.bryma.betim.swine.exceptions.PeerException;
 import io.bryma.betim.swine.exceptions.QualityAssuranceException;
@@ -26,16 +29,18 @@ public class QualityAssuranceService {
     private final ExecutionRepository executionRepository;
     private final QualityAssuranceInstanceRepository qaiRepository;
     private final ActorSystem actorSystem;
+    private final PeerService peerService;
     @Value("${swine.url}")
     private String swineUrl;
 
     public QualityAssuranceService(QualityAssuranceRepository qualityAssuranceRepository,
                                    ExecutionRepository executionRepository, ActorSystem actorSystem,
-                                   QualityAssuranceInstanceRepository qaiRepository) {
+                                   QualityAssuranceInstanceRepository qaiRepository, PeerService peerService) {
         this.qualityAssuranceRepository = qualityAssuranceRepository;
         this.actorSystem = actorSystem;
         this.qaiRepository = qaiRepository;
         this.executionRepository = executionRepository;
+        this.peerService = peerService;
     }
 
     public QualityAssuranceDTO getQualityAssurance(String peer, Long qaID) throws PeerException, QualityAssuranceException {
@@ -46,9 +51,8 @@ public class QualityAssuranceService {
         QualityAssuranceInstance qa = qaiRepository.getByQualityAssuranceAndPeer(qualityAssurance, peer)
                 .orElseThrow(() -> new QualityAssuranceException("Quality Assurance instance not found"));
 
-        return new QualityAssuranceDTO(qa.getId(), qualityAssurance.getExecution_qa().getRequest(),
-                qualityAssurance.getExecution_qa().getTaskResults()
-                        .stream().map(TaskResult::getResult).collect(Collectors.toList()));
+        return new QualityAssuranceDTO(qualityAssurance.getId(), qualityAssurance.getExecution_qa().getRequest(),
+                qa.isDone());
 
 
     }
@@ -73,10 +77,29 @@ public class QualityAssuranceService {
 
     }
 
-    private void notify(String path, QualityAssuranceDTO.ImmutableQualityAssuranceDTO qualityAssuranceDTO){
-        ActorSelection actorSelection = actorSystem.actorSelection(path);
-        ActorRef qualityAssuranceHandler = actorSelection.anchor();
-        qualityAssuranceHandler.tell(qualityAssuranceDTO, ActorRef.noSender());
+    public void qualityAsses(QualityAssuranceInstance qualityAssuranceInstance,
+                             String peer) throws QualityAssuranceException, PeerManagerException {
+        QualityAssurance qualityAssurance = qualityAssuranceRepository
+                .findById(qualityAssuranceInstance.getId()).orElseThrow(
+                        () -> new QualityAssuranceException("Quality Assurance process not found.")
+                );
+        QualityAssuranceInstance savedInstance = qaiRepository.getByQualityAssuranceAndPeer(
+                qualityAssurance, peer
+        ).orElseThrow(
+                () -> new QualityAssuranceException("Quality Assurance Instance not found.")
+        );
+
+        if(!savedInstance.isDone()){
+            savedInstance.setDone(true);
+            savedInstance.setVote(qualityAssuranceInstance.getVote());
+            qaiRepository.save(savedInstance);
+            PeerIntermediary member = peerService.getPeer(peer);
+            MemberDTO memberDTO = new MemberDTO(Member.of(peer, member.getRole(), member.getAddress()),
+                    qualityAssuranceInstance.getVote());
+
+            ActorSelection actorSelection = actorSystem.actorSelection(qualityAssurance.getActorPath());
+            actorSelection.tell(memberDTO, ActorRef.noSender());
+        }
     }
 
     public String getUrl() {

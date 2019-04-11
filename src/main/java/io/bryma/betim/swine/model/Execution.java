@@ -2,6 +2,7 @@ package io.bryma.betim.swine.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.config.PigletState;
 
 import javax.persistence.*;
@@ -22,6 +23,8 @@ public class Execution {
     private LocalDateTime startDate;
     @JsonFormat(pattern = "yyyy-mm-dd")
     private LocalDateTime endDate;
+    private String name;
+    private String taskRequest;
     private String type;
     @NotNull(message = "The request cannot be null")
     @NotEmpty(message = "The request cannot be empty")
@@ -43,6 +46,7 @@ public class Execution {
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "execution_qa")
     private List<QualityAssurance> qualityAssurances = new ArrayList<>();
+    private String taskRunnerPath;
 
     public Execution() {
     }
@@ -160,5 +164,29 @@ public class Execution {
 
     public void setQualityAssurances(List<QualityAssurance> qualityAssurances) {
         this.qualityAssurances = qualityAssurances;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getTaskRequest() {
+        return taskRequest;
+    }
+
+    public void setTaskRequest(String taskRequest) {
+        this.taskRequest = taskRequest;
+    }
+
+    public String getTaskRunnerPath() {
+        return taskRunnerPath;
+    }
+
+    public void setTaskRunnerPath(String taskRunnerPath) {
+        this.taskRunnerPath = taskRunnerPath;
     }
 }

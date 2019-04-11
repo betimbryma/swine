@@ -13,6 +13,7 @@ import eu.smartsocietyproject.pf.*;
 import eu.smartsocietyproject.pf.cbthandlers.*;
 import eu.smartsocietyproject.pf.enummerations.State;
 import eu.smartsocietyproject.smartcom.SmartComServiceRestImpl;
+import io.bryma.betim.swine.DTO.Death;
 import io.bryma.betim.swine.config.LocalMail;
 import io.bryma.betim.swine.config.LocalSmartCom;
 import io.bryma.betim.swine.handlers.qaHandler.QAExecutionHandler;
@@ -42,12 +43,15 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
     private NegotiationService negotiationService;
     private ExecutionService executionService;
     private PigletService pigletService;
+    private TaskResult taskResult;
+    private final PeerQuery qaPeerQuery;
+    private final double qor;
 
     public static Props props(ApplicationContext context, LocalSmartCom.Factory smartcomFactory, QualityAssuranceService qualityAssuranceService,
             NegotiationService negotiationService, ExecutionService executionService, PigletService pigletService, TaskRequest taskRequest,
-                              Duration duration) {
+                              Duration duration, PeerQuery qaPeerQuery, double qor) {
         return Props.create(PigletQualityAssurance.class, () -> new PigletQualityAssurance(context, smartcomFactory, qualityAssuranceService,
-                negotiationService, executionService, pigletService, taskRequest, duration));
+                negotiationService, executionService, pigletService, taskRequest, duration, qaPeerQuery, qor));
     }
 
     @Override
@@ -57,7 +61,8 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
 
     private PigletQualityAssurance(ApplicationContext context, LocalSmartCom.Factory smartcomFactory ,
                                    QualityAssuranceService qualityAssuranceService, NegotiationService negotiationService,
-                                   ExecutionService executionService, PigletService pigletService, TaskRequest taskRequest, Duration duration){
+                                   ExecutionService executionService, PigletService pigletService, TaskRequest taskRequest, Duration duration,
+                                   PeerQuery qaPeerQuery, double qor){
         this.context = context;
         this.qualityAssuranceService = qualityAssuranceService;
         this.taskRequest = taskRequest;
@@ -66,14 +71,17 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
         this.executionService = executionService;
         this.pigletService = pigletService;
         this.smartcomFactory = smartcomFactory;
+        this.qaPeerQuery = qaPeerQuery;
+        this.qor = qor;
     }
 
     @Override
     public void qualityAssurance(ApplicationContext context, TaskResult taskResult) {
         if(duration != null && duration.toMinutes() >= 1)
             getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
-
-        String req = "Please rate the following result: \n"+taskResult.getResult()+"\n with the original request:\n"+taskRequest.getRequest();
+        this.taskResult = taskResult;
+        String req = "Task Request: \n"+taskRequest.getRequest()+"\n\nResults:\n\n"
+                +taskResult.getResult();
 
         TaskDefinition taskDefinition = new TaskDefinition(new ObjectMapper().createObjectNode());
         PigletTaskRequest pigletTaskRequest = new PigletTaskRequest(taskDefinition, "qualityAssurance", req);
@@ -92,17 +100,10 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
                 smartcomFactory, context.getPaymentService());
 
 
-
-        PeerQuery peerQuery = PeerQuery.create().withRule(
-                QueryRule.create("role")
-                .withValue(AttributeType.from("Quality-Assurance"))
-                .withOperation(QueryOperation.equals)
-        );
-
         Collective collective;
 
         try {
-            collective = ApplicationBasedCollective.createFromQuery(smartSocietyApplicationContext, peerQuery);
+            collective = ApplicationBasedCollective.createFromQuery(smartSocietyApplicationContext, qaPeerQuery);
         } catch (PeerManagerException e) {
             parent.tell(State.QUALITY_ASSURANCE_FAIL, getSelf());
             return;
@@ -145,8 +146,14 @@ public class PigletQualityAssurance extends AbstractActorWithTimers implements Q
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                .match(TaskResult.class, taskResult -> qualityAssurance(context, taskResult))
-                .match(ResultDTO.class, resultDTO -> parent.tell(resultDTO, getSelf()))
+                .match(TaskResult.class, taskResult ->
+                        qualityAssurance(context, taskResult))
+                .match(ResultDTO.class,
+                        resultDTO -> {
+                                getSender().tell(PoisonPill.getInstance(), getSelf());
+                                parent.tell(new ResultDTO(resultDTO.getQor(), this.taskResult.getResult()), getSelf());
+                })
+                .match(Death.class, death -> this.parent.tell(State.QUALITY_ASSURANCE_FAIL, getSelf()))
                 .match(State.class, state -> {
                     switch (state){
                         case PROV_FAIL:

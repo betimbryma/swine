@@ -11,4 +11,5 @@ import java.util.Optional;
 @Repository
 public interface ExecutionRepository extends CrudRepository<Execution, Long> {
     Optional<List<Execution>> getAllByPiglet(Piglet piglet);
+    Optional<Execution> getExecutionByIdAndPeer(long id, String peer);
 }

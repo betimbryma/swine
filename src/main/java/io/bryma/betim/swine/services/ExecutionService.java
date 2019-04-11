@@ -2,6 +2,7 @@ package io.bryma.betim.swine.services;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.PoisonPill;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.smartsocietyproject.payment.PaymentService;
 import eu.smartsocietyproject.payment.smartcontracts.ICollectiveBasedTaskContract;
@@ -10,6 +11,7 @@ import eu.smartsocietyproject.peermanager.query.PeerQuery;
 import eu.smartsocietyproject.peermanager.query.QueryOperation;
 import eu.smartsocietyproject.peermanager.query.QueryRule;
 import eu.smartsocietyproject.pf.*;
+import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.DTO.CBTDTO;
 import io.bryma.betim.swine.DTO.ExecutionDTO;
 import io.bryma.betim.swine.DTO.TaskResultDTO;
@@ -50,7 +52,6 @@ public class ExecutionService {
     private final NegotiationService negotiationService;
     private final QualityAssuranceService qualityAssuranceService;
     private final SmartSocietyApplicationContext smartSocietyApplicationContext;
-    private final ContractGasProvider contractGasProvider;
     private final LocalSmartCom.Factory smartcomFactory;
     @Value("${swine.url}")
     private String swineUrl;
@@ -58,15 +59,13 @@ public class ExecutionService {
     public ExecutionService(ActorSystem actorSystem, PigletService pigletService, ExecutionRepository executionRepository,
                             NegotiationService negotiationService, QualityAssuranceService qualityAssuranceService,
                             SmartSocietyApplicationContext smartSocietyApplicationContext, PigletRepository pigletRepository,
-                            ContractGasProvider contractGasProvider, TaskResultRepository taskResultRepository,
-                            LocalSmartCom.Factory smartcomFactory) {
+                            TaskResultRepository taskResultRepository, LocalSmartCom.Factory smartcomFactory) {
         this.pigletService = pigletService;
         this.actorSystem = actorSystem;
         this.executionRepository = executionRepository;
         this.negotiationService = negotiationService;
         this.qualityAssuranceService = qualityAssuranceService;
         this.smartSocietyApplicationContext = smartSocietyApplicationContext;
-        this.contractGasProvider = contractGasProvider;
         this.taskResultRepository = taskResultRepository;
         this.pigletRepository = pigletRepository;
         this.smartcomFactory = smartcomFactory;
@@ -86,6 +85,15 @@ public class ExecutionService {
 
     }
 
+    public Execution getExecution(Long executionId) throws PigletNotFoundException {
+
+        return executionRepository.findById(executionId)
+                .orElseThrow(
+                        () -> new PigletNotFoundException("Execution CBT not found")
+                );
+
+    }
+
     public Execution saveExecution(CBTDTO cbt, String peerId) throws PigletNotFoundException {
 
         Piglet piglet = pigletRepository.findById(cbt.getPigletId())
@@ -101,29 +109,38 @@ public class ExecutionService {
                         .withOperation(QueryOperation.equals))
         );
 
+      PeerQuery qaPeerQuery = PeerQuery.create();
 
-        TaskDefinition taskDefinition = new TaskDefinition(new ObjectMapper().valueToTree(cbt));
+      cbt.getQaQueries().forEach(node ->
+              qaPeerQuery.withRule(QueryRule.create(node.get("key").asText())
+                      .withValue(AttributeType.from(node.get("value").asText()))
+                      .withOperation(QueryOperation.equals))
+      );
+
+
+
+      TaskDefinition taskDefinition = new TaskDefinition(new ObjectMapper().valueToTree(cbt));
         PigletTaskRequest pigletTaskRequest = new PigletTaskRequest(taskDefinition, "swine", cbt.getTaskRequest());
 
 
-        Duration totalDuration = Duration.ofMinutes(cbt.getProvisionTimeout() + cbt.getCompositionTimeout()
-            + cbt.getNegotiationTimeout() + cbt.getExecutionTimeout() + cbt.getQualityAssuranceTimeout());
-        LocalDateTime endDate = cbt.getStartDate().plusMinutes(totalDuration.toMinutes());
-        Execution execution = new Execution(cbt.getStartDate(), endDate, "swine", cbt.getTaskRequest(),
+
+        LocalDateTime startDate = LocalDateTime.now().plusMinutes(cbt.getStart());
+        LocalDateTime endDate = startDate.plusMinutes(cbt.getProvisionTimeout() + cbt.getStart() + cbt.getCompositionTimeout()
+          + cbt.getNegotiationTimeout() + cbt.getExecutionTimeout() + cbt.getQualityAssuranceTimeout());
+        Execution execution = new Execution(startDate, endDate, "swine", cbt.getTaskRequest(),
                 piglet, peerId);
-
+        execution.setName(cbt.getName());
+        execution.setTaskRequest(cbt.getTaskRequest());
         execution = executionRepository.save(execution);
-        Duration start = Duration.between(LocalDateTime.now(), cbt.getStartDate());
+        Duration start = Duration.ofMinutes(cbt.getStart());
 
-        //ICollectiveBasedTaskContract collectiveBasedTaskContract = smartSocietyApplicationContext.getPaymentService()
-          //      .getDeployedContract(cbt.getSmartContractAddress(), contractGasProvider);
+        ActorRef actorRef = actorSystem.actorOf(PigletTaskRunner.props(pigletTaskRequest, smartSocietyApplicationContext, smartcomFactory, peerQuery, qaPeerQuery, negotiationService, this, qualityAssuranceService,
+                pigletService, null, start, null, execution.getId(), cbt.isOpenCall(), Duration.ofMinutes(cbt.getProvisionTimeout()), Duration.ofMinutes(cbt.getCompositionTimeout())
+                        ,Duration.ofMinutes(cbt.getNegotiationTimeout()), Duration.ofMinutes(cbt.getExecutionTimeout()), Duration.ofMinutes(cbt.getQualityAssuranceTimeout()), cbt.getQor()));
 
-        actorSystem.actorOf(PigletTaskRunner.props(pigletTaskRequest, smartSocietyApplicationContext, smartcomFactory, peerQuery, negotiationService, this, qualityAssuranceService,
-                pigletService, null, start, totalDuration, execution.getId(), cbt.isOpenCall(), Duration.ofMinutes(cbt.getProvisionTimeout()), Duration.ofMinutes(cbt.getCompositionTimeout())
-                        ,Duration.ofMinutes(cbt.getNegotiationTimeout()), Duration.ofMinutes(cbt.getExecutionTimeout()), Duration.ofMinutes(cbt.getQualityAssuranceTimeout())));
+        execution.setTaskRunnerPath(actorRef.path().toString());
 
-
-        return execution;
+        return executionRepository.save(execution);
 
     }
 
@@ -142,12 +159,12 @@ public class ExecutionService {
             taskResultRepository.save(taskResult);
         });
         execution.setActorPath(path);
-        execution.setState(PigletState.RUNNING);
+        execution.setState(PigletState.EXECUTION);
         return executionRepository.save(execution);
 
     }
 
-    public void execution(String peer, ExecutionDTO executionDTO) throws PigletNotFoundException, PeerException {
+    public void execution(String peer, ExecutionDTO executionDTO) throws PigletNotFoundException {
 
         TaskResult taskResult = taskResultRepository.findById(executionDTO.getExecutionId()).orElseThrow(
                 () -> new PigletNotFoundException("Execution instance not found.")
@@ -170,8 +187,20 @@ public class ExecutionService {
     }
 
 
-    public List<Execution> getExecutions(Piglet piglet) throws PigletNotFoundException {
+    public List<Execution> getExecutions(Piglet piglet) {
         return executionRepository.getAllByPiglet(piglet)
                 .orElse(Collections.emptyList());
     }
+
+  public void stopExecution(ExecutionDTO executionDTO, String peer) throws PigletNotFoundException {
+    Execution execution =
+            executionRepository
+                    .getExecutionByIdAndPeer(executionDTO.getExecutionId(), peer).orElseThrow(
+                    () -> new PigletNotFoundException("Could not find execution")
+            );
+    execution.setState(PigletState.CANCELLED);
+    executionRepository.save(execution);
+    actorSystem.actorSelection(
+            execution.getTaskRunnerPath()).tell(PoisonPill.getInstance(), ActorRef.noSender());
+  }
 }

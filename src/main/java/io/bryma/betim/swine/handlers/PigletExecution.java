@@ -13,6 +13,7 @@ import eu.smartsocietyproject.pf.Member;
 import eu.smartsocietyproject.pf.ResidentCollective;
 import eu.smartsocietyproject.pf.cbthandlers.ExecutionHandler;
 import eu.smartsocietyproject.pf.enummerations.State;
+import io.bryma.betim.swine.DTO.Death;
 import io.bryma.betim.swine.DTO.TaskResultDTO;
 import io.bryma.betim.swine.exceptions.PigletNotFoundException;
 import io.bryma.betim.swine.piglet.PigletTaskResult;
@@ -57,7 +58,7 @@ public class PigletExecution extends AbstractActorWithTimers implements Executio
     @Override
     public void execute(ApplicationContext context, CollectiveWithPlan agreed) {
         if(duration != null && duration.getSeconds() >= 1)
-            getTimers().startSingleTimer(TICK, PoisonPill.getInstance(), duration);
+            getTimers().startSingleTimer(TICK, new Death(), duration);
         String stringBuilder = "Hi, \n\n You have been invited to participate in a Collective Based Task. " +
                 "Click on the link below for more information:\n" +
                 executionService.getUrl() + executionId +
@@ -109,6 +110,7 @@ public class PigletExecution extends AbstractActorWithTimers implements Executio
                 .match(CollectiveWithPlan.class,
                         collectiveWithPlan -> execute(context, collectiveWithPlan))
                 .match(TaskResultDTO.class,this::execution)
+                .match(Death.class, death -> this.parent.tell(State.EXEC_FAIL, getSelf()))
                 .build();
     }
 
