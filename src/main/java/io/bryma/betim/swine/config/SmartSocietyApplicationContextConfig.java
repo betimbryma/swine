@@ -16,8 +16,6 @@ import java.io.IOException;
 public class SmartSocietyApplicationContextConfig {
 
     @Autowired
-    private PaymentService paymentService;
-    @Autowired
     private LocalSmartCom.Factory smartcomFactory;
 
 
@@ -34,7 +32,7 @@ public class SmartSocietyApplicationContextConfig {
 
         return new SmartSocietyApplicationContext(kindRegistry,
                 pmFactory,
-                smartcomFactory, paymentService);
+                smartcomFactory, null);
     }
 
 }

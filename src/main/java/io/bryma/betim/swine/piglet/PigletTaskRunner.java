@@ -142,36 +142,43 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
                 .match(PigletTick.class,
                         p -> start())
                 .match(State.class, state -> {
+
+                  Execution execution =
+                          getExecution();
+
                     switch (state){
                         case PROVISIONING:
-                            updateState(PigletState.PROVISIONING);
+                            execution.setProvisioning(true);
+                            updateState(PigletState.PROVISIONING, execution);
                             break;
                         case NEGOTIATION:
-                            updateState(PigletState.NEGOTIATING);
+                            execution.setNegotiation(true);
+                            updateState(PigletState.NEGOTIATING, execution);
                             break;
                         case COMPOSITION:
-                            updateState(PigletState.COMPOSITION);
+                            execution.setComposition(true);
+                            updateState(PigletState.COMPOSITION, execution);
                             break;
                         case EXECUTION:
-                            updateState(PigletState.EXECUTION);
+                            execution.setExecution(true);
+                            updateState(PigletState.EXECUTION, execution);
                             break;
                         case QUALITY_ASSURANCE:
-                            updateState(PigletState.QUALITY_ASSURANCE);
+                            execution.setQualityAssurance(true);
+                            updateState(PigletState.QUALITY_ASSURANCE, execution);
                             break;
                         case PROV_FAIL:
                         case COMP_FAIL:
                         case NEG_FAIL:
                         case EXEC_FAIL:
                         case QUALITY_ASSURANCE_FAIL:
-                            updateState(PigletState.FAILED);
+                            updateState(PigletState.FAILED, execution);
                             break;
                         default:
                             break;
                     }
                 })
-                .match(ResultDTO.class, resultDTO -> {
-                  updateState(resultDTO.getQor() >= this.qor ? PigletState.FINISHED : PigletState.FAILED);
-                })
+                .match(ResultDTO.class, resultDTO -> updateState(resultDTO.getQor() >= this.qor ? PigletState.FINISHED : PigletState.FAILED, getExecution()))
                 .build();
     }
 
@@ -180,13 +187,12 @@ public class PigletTaskRunner extends AbstractActorWithTimers implements TaskRun
         return this.pigletTaskRequest.getDefinition().getJson();
     }
 
-    private void updateState(PigletState state){
-        try {
-            Execution execution = executionService.getExecution(this.executionId);
+    private void updateState(PigletState state, Execution execution){
             execution.setState(state);
             executionService.saveExecution(execution);
-        } catch (PigletNotFoundException e) {
-            e.printStackTrace();
-        }
+    }
+
+    private Execution getExecution() throws PigletNotFoundException {
+      return executionService.getExecution(this.executionId);
     }
 }

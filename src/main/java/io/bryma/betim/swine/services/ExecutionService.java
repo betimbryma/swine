@@ -133,7 +133,8 @@ public class ExecutionService {
         execution.setTaskRequest(cbt.getTaskRequest());
         execution = executionRepository.save(execution);
         Duration start = Duration.ofMinutes(cbt.getStart());
-
+        if(start.toMinutes() > 0)
+          execution.setScheduled(true);
         ActorRef actorRef = actorSystem.actorOf(PigletTaskRunner.props(pigletTaskRequest, smartSocietyApplicationContext, smartcomFactory, peerQuery, qaPeerQuery, negotiationService, this, qualityAssuranceService,
                 pigletService, null, start, null, execution.getId(), cbt.isOpenCall(), Duration.ofMinutes(cbt.getProvisionTimeout()), Duration.ofMinutes(cbt.getCompositionTimeout())
                         ,Duration.ofMinutes(cbt.getNegotiationTimeout()), Duration.ofMinutes(cbt.getExecutionTimeout()), Duration.ofMinutes(cbt.getQualityAssuranceTimeout()), cbt.getQor()));
@@ -187,7 +188,7 @@ public class ExecutionService {
     }
 
 
-    public List<Execution> getExecutions(Piglet piglet) {
+    public List<Execution>  getExecutions(Piglet piglet) {
         return executionRepository.getAllByPiglet(piglet)
                 .orElse(Collections.emptyList());
     }

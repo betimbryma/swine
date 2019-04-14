@@ -2,7 +2,6 @@ package io.bryma.betim.swine.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import eu.smartsocietyproject.pf.enummerations.State;
 import io.bryma.betim.swine.config.PigletState;
 
 import javax.persistence.*;
@@ -10,6 +9,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -19,9 +19,9 @@ public class Execution {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String collectiveId;
-    @JsonFormat(pattern = "yyyy-mm-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime startDate;
-    @JsonFormat(pattern = "yyyy-mm-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime endDate;
     private String name;
     private String taskRequest;
@@ -47,6 +47,12 @@ public class Execution {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "execution_qa")
     private List<QualityAssurance> qualityAssurances = new ArrayList<>();
     private String taskRunnerPath;
+    private boolean scheduled;
+    private boolean provisioning;
+    private boolean composition;
+    private boolean negotiation;
+    private boolean execution;
+    private boolean qualityAssurance;
 
     public Execution() {
     }
@@ -189,4 +195,53 @@ public class Execution {
     public void setTaskRunnerPath(String taskRunnerPath) {
         this.taskRunnerPath = taskRunnerPath;
     }
+
+    public boolean isScheduled() {
+        return scheduled;
+    }
+
+    public void setScheduled(boolean scheduled) {
+        this.scheduled = scheduled;
+    }
+
+    public boolean isProvisioning() {
+        return provisioning;
+    }
+
+    public void setProvisioning(boolean provisioning) {
+        this.provisioning = provisioning;
+    }
+
+    public boolean isComposition() {
+        return composition;
+    }
+
+    public void setComposition(boolean composition) {
+        this.composition = composition;
+    }
+
+    public boolean isNegotiation() {
+        return negotiation;
+    }
+
+    public void setNegotiation(boolean negotiation) {
+        this.negotiation = negotiation;
+    }
+
+    public boolean isExecution() {
+        return execution;
+    }
+
+    public void setExecution(boolean execution) {
+        this.execution = execution;
+    }
+
+    public boolean isQualityAssurance() {
+        return qualityAssurance;
+    }
+
+    public void setQualityAssurance(boolean qualityAssurance) {
+        this.qualityAssurance = qualityAssurance;
+    }
+
 }
